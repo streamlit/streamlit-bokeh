@@ -1,5 +1,24 @@
+# Copyright (c) Streamlit Inc. (2018-2022) Snowflake Inc. (2022-2025)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import json
 import os
+from typing import TYPE_CHECKING
 import streamlit.components.v1 as components
+import importlib.metadata
+import bokeh
+from bokeh.embed import json_item
 
 # Create a _RELEASE constant. We'll set this to False while we're developing
 # the component, and True when we're ready to package and distribute it.
@@ -38,19 +57,15 @@ else:
     build_dir = os.path.join(parent_dir, "frontend/build")
     _component_func = components.declare_component("streamlit_bokeh", path=build_dir)
 
-
-import importlib.metadata
-from typing import TYPE_CHECKING
-import bokeh
-from bokeh.embed import json_item
-import json
-
 if TYPE_CHECKING:
     from bokeh.plotting.figure import Figure
 
 ST_BOKEH_VERSION = importlib.metadata.version("streamlit_bokeh")
 
-def streamlit_bokeh(figure: "Figure", use_container_width=True, theme: str = "streamlit", key=None):
+
+def streamlit_bokeh(
+    figure: "Figure", use_container_width=True, theme: str = "streamlit", key=None
+):
     """Create a new instance of "streamlit_bokeh".
 
     Parameters
@@ -92,7 +107,7 @@ def streamlit_bokeh(figure: "Figure", use_container_width=True, theme: str = "st
             f"run `pip install --force-reinstall --no-deps bokeh=="
             f"{ST_BOKEH_VERSION}` to install the correct version."
         )
-    
+
     # Call through to our private component function. Arguments we pass here
     # will be sent to the frontend, where they'll be available in an "args"
     # dictionary.
@@ -100,7 +115,8 @@ def streamlit_bokeh(figure: "Figure", use_container_width=True, theme: str = "st
         figure=json.dumps(json_item(figure)),
         use_container_width=use_container_width,
         bokeh_theme=theme,
-        key=key)
+        key=key,
+    )
 
     # We could modify the value returned from the component if we wanted.
     # There's no need to do this in our simple example - but it's an option.
