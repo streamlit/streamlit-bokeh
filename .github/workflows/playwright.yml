@@ -50,10 +50,13 @@ jobs:
           npm install
           npm run build
       - name: Build the package
-        run: python setup.py sdist bdist_wheel
-      - name: Install Python test dependencies
         run: |
           python -m venv venv
+          source venv/bin/activate
+          pip install setuptools
+          python setup.py sdist bdist_wheel
+      - name: Install Python test dependencies
+        run: |
           source venv/bin/activate
           pip install --upgrade pip
           pip install -r e2e_playwright/test-requirements.txt
