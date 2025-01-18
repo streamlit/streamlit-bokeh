@@ -37,7 +37,7 @@ export function streamlitTheme(theme: Theme): BokehTheme {
     Plot: {
       background_fill_color: backgroundColor,
       border_fill_color: backgroundColor,
-      outline_line_color: textColor,
+      outline_line_color: "transparent",
       outline_line_alpha: 0.25,
     },
     Grid: {
