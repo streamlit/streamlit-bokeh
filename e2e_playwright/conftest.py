@@ -50,11 +50,6 @@ from playwright.sync_api import (
 from pytest import FixtureRequest
 
 from shared.git_utils import get_git_root
-from shared.performance import (
-    is_supported_browser,
-    measure_performance,
-    start_capture_traces,
-)
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -278,7 +273,6 @@ def app_server(
 def app(page: Page, app_port: int) -> Page:
     """Fixture that opens the app."""
     page.goto(f"http://localhost:{app_port}/")
-    start_capture_traces(page)
     wait_for_app_loaded(page)
     return page
 
@@ -500,7 +494,6 @@ def app_theme(request) -> str:
 def themed_app(page: Page, app_port: int, app_theme: str) -> Page:
     """Fixture that opens the app with the given theme."""
     page.goto(f"http://localhost:{app_port}/?embed_options={app_theme}")
-    start_capture_traces(page)
     wait_for_app_loaded(page)
     return page
 
@@ -743,16 +736,6 @@ def assert_snapshot(
         pytest.fail(
             "Missing or mismatched snapshots: \n" + "\n".join(test_failure_messages)
         )
-
-
-@pytest.fixture(scope="function", autouse=True)
-def playwright_profiling(request, page: Page):
-    if request.node.get_closest_marker("no_perf") or not is_supported_browser(page):
-        yield
-        return
-
-    with measure_performance(page, test_name=request.node.name):
-        yield
 
 
 # endregion

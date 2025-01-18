@@ -11,13 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-bokeh==3.6.1
-bokeh-sampledata
-pixelmatch>=0.3.0,<1.0.0
-playwright==1.49.*
-pytest<9.0.0
-pytest-playwright>=0.3.3
-pytest-xdist
-scipy
-testfixtures
-dist/streamlit_bokeh-3.6.1-py3-none-any.whl
+
+CHART_TYPES = [
+    "markers",
+    "color_scatter",
+    "elements",
+    "lorenz",
+    "linear_cmap",
+    "basic_bar",
+    "vstack_line",
+    "stack_bar",
+]
