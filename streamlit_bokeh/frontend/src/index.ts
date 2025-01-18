@@ -15,9 +15,15 @@ interface Dimensions {
 // The div with id "stBokehChart" will always exist because html file contains it
 const chart = document.getElementById("stBokehChart") as HTMLDivElement
 
+// These values come from Bokeh's default values
+// See https://github.com/bokeh/bokeh/blob/3.6.2/bokehjs/src/lib/models/plots/plot.ts#L203
 const DEFAULT_WIDTH = 600 // px
 const DEFAULT_HEIGHT = 600 // px
 
+/**
+ * This function is a memoized function that returns the chart data
+ * if the figure is the same as the last time it was called.
+ */
 const getChartData = (() => {
   let savedFigure: string | null = null
   let savedChartData: object | null = null
@@ -64,6 +70,8 @@ async function updateChart(data: any, useContainerWidth: boolean = false) {
    * In that case, the json object will contains an attribute called
    * plot_width (or plot_heigth) inside the plot reference.
    * If that values are missing, we can set that values to make the chart responsive.
+   *
+   * Note that the figure is the first element in roots array.
    */
   const plot = data?.doc?.roots?.[0]
 
@@ -128,6 +136,10 @@ async function onRender(event: Event): Promise<void> {
       themeChanged = true
     }
   }
+  // NOTE: Each script run forces Bokeh to provide different ids for their
+  // elements. For that reason, this will always update the chart.
+  // The only exception would be if the same info is sent down from the frontend
+  // only. It shouldn't happen, but it's a safeguard.
   if (hasChanged || themeChanged) {
     await updateChart(chartData, renderData.args.use_container_width)
   }

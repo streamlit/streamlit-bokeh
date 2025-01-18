@@ -6,7 +6,7 @@ this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
 setuptools.setup(
-    name="streamlit-bokeh-chart",
+    name="streamlit-bokeh",
     version="3.6.1",
     author="Streamlit",
     author_email="streamlitcommunity@snowflake.com",

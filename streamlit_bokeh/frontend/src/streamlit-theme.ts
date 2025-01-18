@@ -1,13 +1,25 @@
 import { Theme } from "streamlit-component-lib"
 
-class BokehTheme {
-  readonly attrs: Record<string, Record<string, string | number>>
+type BokehObjectType = string
+type AttrName = string
+type AttrValue = string | number
 
-  constructor(attrs: Record<string, Record<string, string | number>>) {
+// Bokeh does not export their Theme Class, so we
+// simulate close to the class provided by Bokeh
+// The relevant class is located here:
+// https://github.com/bokeh/bokeh/blob/3.6.2/bokehjs/src/lib/api/themes.ts#L17
+class BokehTheme {
+  readonly attrs: Record<BokehObjectType, Record<AttrName, AttrValue>>
+
+  constructor(attrs: Record<BokehObjectType, Record<AttrName, AttrValue>>) {
     this.attrs = attrs
   }
 
   get(obj: any, attr: string): unknown | undefined {
+    // Identify the type of the Bokeh object. It will be
+    // an instance of a class that Bokeh provides through
+    // their API, so we just iterate over all theclasses
+    // to identify the type of the object.
     let type = null
     Object.keys(this.attrs).forEach((key) => {
       if (obj instanceof window.Bokeh[key]) {
@@ -19,12 +31,9 @@ class BokehTheme {
       return undefined
     }
 
-    try {
-      return this.attrs[type][attr]
-    } catch {
-      // Must not be set
-      return undefined
-    }
+    const attrsForType = this.attrs[type] ?? {}
+
+    return attrsForType[attr] ?? undefined
   }
 }
 
@@ -55,11 +64,15 @@ export function streamlitTheme(theme: Theme): BokehTheme {
       axis_line_color: textColor,
 
       major_label_text_color: textColor,
+      // We hardcode the font because if the font ever changes,
+      // We would need to include the relevant font files anyways
       major_label_text_font: '"Source Sans Pro", sans-serif',
       major_label_text_font_size: "1em",
 
       axis_label_standoff: 10,
       axis_label_text_color: textColor,
+      // We hardcode the font because if the font ever changes,
+      // We would need to include the relevant font files anyways
       axis_label_text_font: '"Source Sans Pro", sans-serif',
       axis_label_text_font_size: "1em",
       axis_label_text_font_style: "normal",
@@ -70,6 +83,8 @@ export function streamlitTheme(theme: Theme): BokehTheme {
 
       label_standoff: 8,
       label_text_color: textColor,
+      // We hardcode the font because if the font ever changes,
+      // We would need to include the relevant font files anyways
       label_text_font: '"Source Sans Pro", sans-serif',
       label_text_font_size: "1.025em",
 
@@ -79,11 +94,15 @@ export function streamlitTheme(theme: Theme): BokehTheme {
     },
     BaseColorBar: {
       title_text_color: textColor,
+      // We hardcode the font because if the font ever changes,
+      // We would need to include the relevant font files anyways
       title_text_font: '"Source Sans Pro", sans-serif',
       title_text_font_size: "1.025em",
       title_text_font_style: "normal",
 
       major_label_text_color: textColor,
+      // We hardcode the font because if the font ever changes,
+      // We would need to include the relevant font files anyways
       major_label_text_font: '"Source Sans Pro", sans-serif',
       major_label_text_font_size: "1.025em",
 
@@ -93,6 +112,8 @@ export function streamlitTheme(theme: Theme): BokehTheme {
     },
     Title: {
       text_color: textColor,
+      // We hardcode the font because if the font ever changes,
+      // We would need to include the relevant font files anyways
       text_font: '"Source Sans Pro", sans-serif',
       text_font_size: "1.15em",
     },
