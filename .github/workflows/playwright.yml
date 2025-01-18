@@ -49,6 +49,29 @@ jobs:
           cd streamlit_bokeh/frontend
           npm install
           npm run build
+      # Combine hashes of the Python interpreter, Pipfile, and today's
+      # date into a file whose hash will key the Python virtualenv.
+      #
+      # This means that our virtualenv cache will expire each day. We do
+      # this because we are not using a lockfile to pin dependencies -
+      # instead, each time Github Actions rebuilds the virtualenv, it uses the
+      # latest compatible version of each dependency (which mirrors what
+      # happens when a user installs Streamlit locally). So we expire our
+      # virtualenv cache daily to prevent it from getting far out of sync
+      # with what a fresh Streamlit installation would look like.
+      - name: Create Python environment cache key
+        run: |
+          md5sum $(which python) > $GITHUB_WORKSPACE/python_cache_key.md5
+          md5sum e2e_playwright/test-requirements.txt >> $GITHUB_WORKSPACE/python_cache_key.md5
+          md5sum setup.py >> $GITHUB_WORKSPACE/python_cache_key.md5
+          date +%F >> $GITHUB_WORKSPACE/python_cache_key.md5
+        shell: bash
+      - name: Restore virtualenv from cache
+        id: cache-virtualenv
+        uses: actions/cache@v4
+        with:
+          path: venv
+          key: v1-python-venv-${{ hashFiles('**/python_cache_key.md5') }}
       - name: Build the package
         run: |
           python -m venv venv
@@ -61,7 +84,7 @@ jobs:
           pip install --upgrade pip
           pip install -r e2e_playwright/test-requirements.txt
           python -m playwright install --with-deps
-      - name: Run make playwright
+      - name: Run playwright tests
         run: |
           source venv/bin/activate
           cd e2e_playwright
