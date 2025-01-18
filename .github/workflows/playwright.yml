@@ -60,9 +60,6 @@ jobs:
           source venv/bin/activate
           pip install --upgrade pip
           pip install -r e2e_playwright/test-requirements.txt
-      - name: Install playwright
-        run: |
-          source venv/bin/activate
           python -m playwright install --with-deps
       - name: Run make playwright
         run: |
