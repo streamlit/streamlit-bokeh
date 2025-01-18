@@ -61,9 +61,12 @@ jobs:
           pip install --upgrade pip
           pip install -r e2e_playwright/test-requirements.txt
       - name: Install playwright
-        run: python -m playwright install --with-deps
+        run: |
+          source venv/bin/activate
+          python -m playwright install --with-deps
       - name: Run make playwright
         run: |
+          source venv/bin/activate
           cd e2e_playwright
           pytest --browser webkit --browser chromium --browser firefox --video retain-on-failure --screenshot only-on-failure --output ./test-results/
       - name: Upload failed test results
