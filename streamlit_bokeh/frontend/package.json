@@ -10,8 +10,12 @@
     "streamlit-component-lib": "^2.0.0",
     "typescript": "^4.2.0"
   },
+  "devDependencies": {
+    "prettier": "^3.4.2"
+  },
   "scripts": {
     "start": "react-scripts start",
+    "format": "prettier --write src/**/*.ts",
     "build": "react-scripts build",
     "test": "react-scripts test --transformIgnorePatterns='node_modules/(?!streamlit-component-lib)/'",
     "eject": "react-scripts eject"
