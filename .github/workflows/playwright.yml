@@ -44,14 +44,21 @@ jobs:
           node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
-      - name: Install playwright
-        run: python -m playwright install --with-deps
       - name: Make frontend
         run: |
           cd streamlit_bokeh/frontend
+          npm install
           npm run build
       - name: Build the package
         run: python setup.py sdist bdist_wheel
+      - name: Install Python test dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r e2e_playwright/test-requirements.txt
+      - name: Install playwright
+        run: python -m playwright install --with-deps
       - name: Run make playwright
         run: |
           cd e2e_playwright
