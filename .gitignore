@@ -41,6 +41,10 @@ cffi_bin
 .Trashes
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
+e2e_playwright/__snapshots__/darwin
+
+# Playwright
+test-results
 
 ########################################################################
 # node - https://github.com/github/gitignore/blob/master/Node.gitignore
