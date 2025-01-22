@@ -28,20 +28,20 @@ jobs:
 
     steps:
       - name: Checkout streamlit-bokeh code
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ inputs.ref }}
-        persist-credentials: false
-        submodules: "recursive"
-        fetch-depth: 2
-    - name: Setup Node
-      uses: actions/setup-node@v4
-      with:
-        node-version-file: ".nvmrc"
-        cache: "npm"
-        cache-dependency-path: "**/package-lock.json"
-    - name: Run frontend tests
-      run: |
-        cd streamlit_bokeh/frontend
-        npm install
-        npm run test
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+          submodules: "recursive"
+          fetch-depth: 2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - name: Run frontend tests
+        run: |
+          cd streamlit_bokeh/frontend
+          npm install
+          npm run test
