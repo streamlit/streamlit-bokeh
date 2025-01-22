@@ -12,6 +12,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "format": "prettier --write src/**/*.ts",
     "build": "react-scripts build",
     "test": "react-scripts test --transformIgnorePatterns='node_modules/(?!streamlit-component-lib)/'",
     "eject": "react-scripts eject"
@@ -33,6 +34,7 @@
   },
   "homepage": ".",
   "devDependencies": {
+    "prettier": "^3.4.2",
     "util": "^0.12.5"
   }
 }
