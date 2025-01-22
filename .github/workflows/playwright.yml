@@ -27,7 +27,7 @@ jobs:
         shell: bash
 
     steps:
-      - name: Checkout Streamlit code
+      - name: Checkout streamlit-bokeh code
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}

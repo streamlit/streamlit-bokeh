@@ -15,6 +15,10 @@
 """
 Global pytest fixtures for e2e tests.
 This file is automatically run by pytest before tests are executed.
+
+WARNING: This file is copied from the Streamlit repository. It has
+         been modified for simplicity and to remove dependencies on
+         Streamlit's internal code.
 """
 
 from __future__ import annotations
@@ -53,12 +57,6 @@ from shared.git_utils import get_git_root
 
 if TYPE_CHECKING:
     from types import ModuleType
-
-
-def pytest_configure(config: pytest.Config):
-    config.addinivalue_line(
-        "markers", "no_perf: mark test to not use performance profiling"
-    )
 
 
 def reorder_early_fixtures(metafunc: pytest.Metafunc):
@@ -291,162 +289,6 @@ def app_with_query_params(
     wait_for_app_loaded(page)
 
     return page, query_params
-
-
-@dataclass
-class IframedPageAttrs:
-    # id attribute added to the iframe html tag
-    element_id: str | None = None
-    # query params to be appended to the iframe src URL
-    src_query_params: dict[str, str] | None = None
-    # additional HTML body
-    additional_html_head: str | None = None
-    # html content to load. Following placeholders are replaced during the test:
-    # - $APP_URL: the URL of the Streamlit app
-    html_content: str | None = None
-
-
-@dataclass
-class IframedPage:
-    # the page to configure
-    page: Page
-    # opens the configured page via the iframe URL and returns the frame_locator
-    # pointing to the iframe
-    open_app: Callable[[IframedPageAttrs | None], FrameLocator]
-
-
-@pytest.fixture(scope="function")
-def iframed_app(page: Page, app_port: int) -> IframedPage:
-    """Fixture that returns an IframedPage.
-
-    The page object can be used to configure additional routes, for example to override
-    the host-config. The open_app function triggers the opening of the app in an iframe.
-    """
-    # we are going to intercept the request, so the address and html-file is arbitrarily
-    # chosen and does not even exist
-    fake_iframe_server_origin = "http://localhost:1345"
-    fake_iframe_server_route = f"{fake_iframe_server_origin}/iframed_app.html"
-    # the url where the Streamlit server is reachable
-    app_url = f"http://localhost:{app_port}"
-    # the CSP header returned for the Streamlit index.html loaded in the iframe. This is
-    # similar to a common CSP we have seen in the wild.
-    app_csp_header = (
-        f"default-src 'none'; worker-src blob:; form-action 'none'; "
-        f"connect-src ws://localhost:{app_port}/_stcore/stream "
-        f"http://localhost:{app_port}/_stcore/allowed-message-origins "
-        f"http://localhost:{app_port}/_stcore/upload_file/ "
-        f"https://some-prefix.com/somethingelse/_stcore/upload_file/ "
-        f"http://localhost:{app_port}/_stcore/host-config "
-        f"http://localhost:{app_port}/_stcore/health; script-src 'unsafe-inline' "
-        f"'unsafe-eval' {app_url}/static/js/; style-src 'unsafe-inline' "
-        f"{app_url}/static/css/; img-src data: {app_url}/favicon.png "
-        f"{app_url}/favicon.ico; font-src {app_url}/static/fonts/ "
-        f"{app_url}/static/media/; frame-ancestors {fake_iframe_server_origin};"
-    )
-
-    def _open_app(iframe_element_attrs: IframedPageAttrs | None = None) -> FrameLocator:
-        _iframe_element_attrs = iframe_element_attrs
-        if _iframe_element_attrs is None:
-            _iframe_element_attrs = IframedPageAttrs()
-
-        query_params = ""
-        if _iframe_element_attrs.src_query_params:
-            query_params = "?" + parse.urlencode(_iframe_element_attrs.src_query_params)
-
-        src = f"{app_url}/{query_params}"
-        additional_html_head = (
-            _iframe_element_attrs.additional_html_head
-            if _iframe_element_attrs.additional_html_head
-            else ""
-        )
-        _iframed_body = (
-            f"""
-            <!DOCTYPE html>
-            <html style="height: 100%;">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Iframed Streamlit App</title>
-                    {additional_html_head}
-                </head>
-                <body style="height: 100%;">
-                    <iframe
-                        src={src}
-                        id={_iframe_element_attrs.element_id
-                            if _iframe_element_attrs.element_id
-                            else ""}
-                        title="Iframed Streamlit App"
-                        allow="clipboard-write; microphone;"
-                        sandbox="allow-popups allow-same-origin allow-scripts allow-downloads"
-                        width="100%"
-                    >
-                    </iframe>
-                </body>
-            </html>
-            """
-            if _iframe_element_attrs.html_content is None
-            else _iframe_element_attrs.html_content.replace("$APP_URL", app_url)
-        )
-
-        def fulfill_iframe_request(route: Route) -> None:
-            """Return as response an iframe that loads the actual Streamlit app."""
-
-            browser = page.context.browser
-            # webkit requires the iframe's parent to have "blob:" set, for example if we
-            # want to download a CSV via the blob: url; Chrome seems to be more lax
-            frame_src_blob = ""
-            if browser is not None and (
-                browser.browser_type.name == "webkit"
-                or browser.browser_type.name == "firefox"
-            ):
-                frame_src_blob = "blob:"
-
-            route.fulfill(
-                status=200,
-                body=_iframed_body,
-                headers={
-                    "Content-Type": "text/html",
-                    "Content-Security-Policy": f"frame-src {frame_src_blob} {app_url};",
-                },
-            )
-
-        # intercept all requests to the fake iframe server and fullfil the request in
-        # playwright
-        page.route(fake_iframe_server_route, fulfill_iframe_request)
-
-        def fullfill_streamlit_app_request(route: Route) -> None:
-            """Get the actual Streamlit app and return it's content."""
-            response = route.fetch()
-            route.fulfill(
-                body=response.body(),
-                headers={**response.headers, "Content-Security-Policy": app_csp_header},
-            )
-
-        # this will route the request to the actual Streamlit app
-        page.route(src, fullfill_streamlit_app_request)
-
-        def _expect_streamlit_app_loaded_in_iframe_with_added_header(
-            response: Response,
-        ) -> bool:
-            """Ensure that the routing-interception worked and that Streamlit app is
-            indeed loaded with the CSP header we expect"""
-
-            return (
-                response.url == src
-                and response.headers["content-security-policy"] == app_csp_header
-            )
-
-        with page.expect_event(
-            "response",
-            predicate=_expect_streamlit_app_loaded_in_iframe_with_added_header,
-        ):
-            page.goto(fake_iframe_server_route, wait_until="domcontentloaded")
-            frame_locator = page.frame_locator("iframe")
-            frame_locator.nth(0).get_by_test_id("stAppViewContainer").wait_for(
-                timeout=30000, state="attached"
-            )
-        return frame_locator
-
-    return IframedPage(page, _open_app)
 
 
 @pytest.fixture(scope="session")
