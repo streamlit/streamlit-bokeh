@@ -19,7 +19,9 @@ from playwright.sync_api import Page, expect
 
 
 @pytest.mark.parametrize("chart", CHART_TYPES)
-def test_bokeh_chart(themed_app: Page, assert_snapshot: ImageCompareFunction, chart: str):
+def test_bokeh_chart(
+    themed_app: Page, assert_snapshot: ImageCompareFunction, chart: str
+):
     """Test that st.bokeh_chart renders correctly."""
     themed_app.get_by_test_id("stSelectbox").locator("input").click()
 
