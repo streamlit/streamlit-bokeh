@@ -241,3 +241,4 @@ if __name__ == "__main__":
     print("::set-output name=needs_update::true")
     print(f"::set-output name=old_version::{old_version}")
     print(f"::set-output name=new_version::{new_version}")
+    print(f"::set-output name=new_bokeh_version::{new_bokeh_version}")

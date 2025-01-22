@@ -1,0 +1,90 @@
+name: "Update Bokeh"
+
+on:
+  schedule:
+    # Run job at 9:30am PST or 10:30am PDT
+    - cron: "30 17 * * *"
+  # Allows the check to be manually triggered
+  workflow_dispatch:
+
+jobs:
+  update-bokeh:
+    runs-on: ubuntu-latest
+
+    # Ensure we can push back to the repository
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: "main"
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+
+      - name: Install dependencies
+        run: pip install requests semver
+
+      - name: Run script
+        id: compare_bokeh
+        run: python scripts/update_bokeh_version.py
+
+      - name: Run npm install
+        if: steps.compare_bokeh.outputs.needs_update == 'true'
+        id: npm_install
+        run: |
+          cd streamlit_bokeh/frontend
+          npm install
+
+      - name: Commit changes
+        if: steps.compare_bokeh.outputs.needs_update == 'true'
+        run: |
+          echo "NEW_VERSION=${{ steps.compare_bokeh.outputs.new_version }}" >> $GITHUB_ENV
+          BRANCH="release/${NEW_VERSION}"
+
+          cd streamlit_bokeh/frontend
+          npm install
+          cd ../..
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git checkout -b "${BRANCH}"
+          git add .
+          git commit -m "Update Bokeh to ${NEW_VERSION}"
+          git push origin "${BRANCH}"
+
+      - name: Create Pull Request
+        if: steps.compare_bokeh.outputs.needs_update == 'true'
+        id: create_pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: "release/${{ steps.compare_bokeh.outputs.new_version }}"
+          base: main
+          title: "Update Bokeh to ${{ steps.compare_bokeh.outputs.new_bokeh_version }}"
+          body: "This PR updates Bokeh to version ${{ steps.compare_bokeh.outputs.new_bokeh_version }}."
+
+      - name: Successful Update Bokeh Slack Message
+        if: steps.create_pr.outputs.pull-request-url != ''
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          RUN_ID: ${{ github.run_id }}
+        run: python scripts/slack_notifications.py update-bokeh success ${{ steps.create_pr.outputs.pull-request-url }}
+
+      - name: Failed Update Bokeh Slack Message
+        if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          RUN_ID: ${{ github.run_id }}
+        run: python scripts/slack_notifications.py update-bokeh failure

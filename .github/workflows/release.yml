@@ -1,0 +1,143 @@
+name: "Build, Test, and Release on merged release branch"
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+jobs:
+  if-release-branch:
+    runs-on: ubuntu-latest
+    outputs:
+      is_release: ${{ steps.check_branch.outputs.IS_RELEASE }}
+    steps:
+      - name: Check if PR was merged from a release branch
+        id: check_branch
+        run: |
+          if [[ "${{ github.event.pull_request.merged }}" == "true" &&
+                "${{ github.event.pull_request.head.ref }}" =~ ^release/[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "IS_RELEASE=true" >> $GITHUB_ENV
+            echo "IS_RELEASE=true"
+          else
+            echo "IS_RELEASE=false" >> $GITHUB_ENV
+            echo "IS_RELEASE=false"
+          fi
+
+  run-ts-tests:
+    needs: if-release-branch
+    if: needs.if-release-branch.outputs.is_release == 'true'
+    uses: ./.github/workflows/ts-tests.yml
+    with:
+      ref: ${{ github.event.pull_request.head.ref }}
+
+  run-enforce-pre-commit:
+    needs: if-release-branch
+    if: needs.if-release-branch.outputs.is_release == 'true'
+    uses: ./.github/workflows/enforce-pre-commit.yml
+    with:
+      ref: ${{ github.event.pull_request.head.ref }}
+
+  run-playwright-tests:
+    needs: if-release-branch
+    if: needs.if-release-branch.outputs.is_release == 'true'
+    uses: ./.github/workflows/playwright.yml
+    with:
+      ref: ${{ github.event.pull_request.head.ref }}
+
+  release:
+    needs:
+      - if-release-branch
+      - run-ts-tests
+      - run-enforce-pre-commit
+      - run-playwright-tests
+    if: needs.if-release-branch.outputs.is_release == 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Streamlit code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+          submodules: "recursive"
+          fetch-depth: 2
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+
+      - name: Make frontend
+        run: |
+          cd streamlit_bokeh/frontend
+          npm install
+          npm run build
+
+      - name: Create Python environment cache key
+        run: |
+          md5sum $(which python) > $GITHUB_WORKSPACE/python_cache_key.md5
+          md5sum e2e_playwright/test-requirements.txt >> $GITHUB_WORKSPACE/python_cache_key.md5
+          md5sum setup.py >> $GITHUB_WORKSPACE/python_cache_key.md5
+          date +%F >> $GITHUB_WORKSPACE/python_cache_key.md5
+        shell: bash
+
+      - name: Restore virtualenv from cache
+        id: cache-virtualenv
+        uses: actions/cache@v4
+        with:
+          path: venv
+          key: v1-python-venv-${{ hashFiles('**/python_cache_key.md5') }}
+
+      - name: Build the package
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install setuptools
+          python setup.py sdist bdist_wheel
+
+      - name: Store Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Release
+          path: dist
+
+      - name: Upload to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+
+      - name: Push Tags
+        run: |
+          NEW_VERSION=$(echo "${{ github.event.pull_request.head.ref }}" | sed 's/release\///')
+          if [[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            git tag "v${NEW_VERSION}"
+            git push origin "v${NEW_VERSION}"
+          else
+            echo "Error: Invalid version detected!"
+            exit 1
+          fi
+
+      - name: Successful Release Slack Message
+        if: success()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          RUN_ID: ${{ github.run_id }}
+        run: python scripts/slack_notifications.py release success
+
+      - name: Failed Release Slack Message
+        if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          RUN_ID: ${{ github.run_id }}
+        run: python scripts/slack_notifications.py release failure
