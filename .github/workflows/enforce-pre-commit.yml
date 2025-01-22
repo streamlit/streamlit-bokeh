@@ -34,12 +34,10 @@ jobs:
           persist-credentials: false
           submodules: "recursive"
           fetch-depth: 2
-      - name: Set Python version vars
-        uses: ./.github/actions/build_info
-      - name: Set up Python ${{ env.PYTHON_MAX_VERSION }}
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "${{ env.PYTHON_MAX_VERSION }}"
+          python-version: "3.12"
       - name: Restore pre-commit cache
         id: cache-pre-commit
         uses: actions/cache@v4
