@@ -178,9 +178,10 @@ async function onRender(event: Event): Promise<void> {
   // only. It shouldn't happen, but it's a safeguard.
   if (hasChanged || themeChanged) {
     await updateChart(chartData, useContainerWidth)
-    // The UI may change dimensions so we should ensure the iframe is the proper height
-    Streamlit.setFrameHeight()
   }
+
+  // The UI may change dimensions so we should ensure the iframe is the proper height
+  Streamlit.setFrameHeight()
 }
 
 // Attach our `onRender` handler to Streamlit's render event.
