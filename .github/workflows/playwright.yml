@@ -1,0 +1,97 @@
+name: Playwright E2E Tests
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    types: [opened, synchronize, reopened]
+  # Allows workflow to be called from other workflows
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+
+# Avoid duplicate workflows on same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-playwright
+  cancel-in-progress: true
+
+jobs:
+  playwright-e2e-tests:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout streamlit-bokeh code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+          submodules: "recursive"
+          fetch-depth: 2
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - name: Make frontend
+        run: |
+          cd streamlit_bokeh/frontend
+          npm install
+          npm run build
+      # Combine hashes of the Python interpreter, Pipfile, and today's
+      # date into a file whose hash will key the Python virtualenv.
+      #
+      # This means that our virtualenv cache will expire each day. We do
+      # this because we are not using a lockfile to pin dependencies -
+      # instead, each time Github Actions rebuilds the virtualenv, it uses the
+      # latest compatible version of each dependency (which mirrors what
+      # happens when a user installs Streamlit locally). So we expire our
+      # virtualenv cache daily to prevent it from getting far out of sync
+      # with what a fresh Streamlit installation would look like.
+      - name: Create Python environment cache key
+        run: |
+          md5sum $(which python) > $GITHUB_WORKSPACE/python_cache_key.md5
+          md5sum e2e_playwright/test-requirements.txt >> $GITHUB_WORKSPACE/python_cache_key.md5
+          md5sum setup.py >> $GITHUB_WORKSPACE/python_cache_key.md5
+          date +%F >> $GITHUB_WORKSPACE/python_cache_key.md5
+        shell: bash
+      - name: Restore virtualenv from cache
+        id: cache-virtualenv
+        uses: actions/cache@v4
+        with:
+          path: venv
+          key: v1-python-venv-${{ hashFiles('**/python_cache_key.md5') }}
+      - name: Build the package
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install setuptools
+          python setup.py sdist bdist_wheel
+      - name: Install Python test dependencies
+        run: |
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r e2e_playwright/test-requirements.txt
+          python -m playwright install --with-deps
+      - name: Run playwright tests
+        run: |
+          source venv/bin/activate
+          cd e2e_playwright
+          pytest --browser webkit --browser chromium --browser firefox --video retain-on-failure --screenshot only-on-failure --output ./test-results/
+      - name: Upload failed test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright_test_results
+          path: e2e_playwright/test-results
