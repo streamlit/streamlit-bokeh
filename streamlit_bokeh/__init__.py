@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 __version__ = importlib.metadata.version("streamlit_bokeh")
 REQUIRED_BOKEH_VERSION = "3.6.1"
 
-def streamlit_bokeh(figure: "Figure", use_container_width=True, theme: str = "streamlit", key=None):
+def streamlit_bokeh(figure: "Figure", use_container_width: bool=True, theme: str = "streamlit", key: str | None=None) -> None:
     """Create a new instance of "streamlit_bokeh".
 
     Parameters
@@ -97,12 +97,10 @@ def streamlit_bokeh(figure: "Figure", use_container_width=True, theme: str = "st
     # Call through to our private component function. Arguments we pass here
     # will be sent to the frontend, where they'll be available in an "args"
     # dictionary.
-    component_value = _component_func(
+    _component_func(
         figure=json.dumps(json_item(figure)),
         use_container_width=use_container_width,
         bokeh_theme=theme,
         key=key)
 
-    # We could modify the value returned from the component if we wanted.
-    # There's no need to do this in our simple example - but it's an option.
-    return component_value
+    return None

@@ -17,8 +17,8 @@ const chart = document.getElementById("stBokehChart") as HTMLDivElement;
 
 // These values come from Bokeh's default values
 // See https://github.com/bokeh/bokeh/blob/3.6.2/bokehjs/src/lib/models/plots/plot.ts#L203
-const DEFAULT_WIDTH = 600; // px
-const DEFAULT_HEIGHT = 600; // px
+const DEFAULT_WIDTH = 400; // px
+const DEFAULT_HEIGHT = 350; // px
 
 /**
  * This function is a memoized function that returns the chart data
