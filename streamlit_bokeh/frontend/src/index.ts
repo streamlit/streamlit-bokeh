@@ -1,65 +1,105 @@
-import { Streamlit, RenderData, Theme } from "streamlit-component-lib"
-import { streamlitTheme } from "./streamlit-theme"
+import { Streamlit, RenderData, Theme } from "streamlit-component-lib";
+import { streamlitTheme } from "./streamlit-theme";
 
 declare global {
   interface Window {
-    Bokeh: any
+    Bokeh: any;
   }
 }
 
 interface Dimensions {
-  width: number
-  height: number
+  width: number;
+  height: number;
 }
 
 // The div with id "stBokehChart" will always exist because html file contains it
-const chart = document.getElementById("stBokehChart") as HTMLDivElement
+const chart = document.getElementById("stBokehChart") as HTMLDivElement;
 
 // These values come from Bokeh's default values
 // See https://github.com/bokeh/bokeh/blob/3.6.2/bokehjs/src/lib/models/plots/plot.ts#L203
-const DEFAULT_WIDTH = 600 // px
-const DEFAULT_HEIGHT = 600 // px
+const DEFAULT_WIDTH = 600; // px
+const DEFAULT_HEIGHT = 600; // px
 
 /**
  * This function is a memoized function that returns the chart data
  * if the figure is the same as the last time it was called.
  */
-const getChartData = (() => {
-  let savedFigure: string | null = null
-  let savedChartData: object | null = null
+export const getChartDataGenerator = () => {
+  let savedFigure: string | null = null;
+  let savedChartData: object | null = null;
 
   return (figure: string) => {
     if (figure !== savedFigure) {
-      savedFigure = figure
-      savedChartData = JSON.parse(figure)
+      savedFigure = figure;
+      savedChartData = JSON.parse(figure);
 
-      return { data: savedChartData, hasChanged: true }
+      return { data: savedChartData, hasChanged: true };
     }
 
-    return { data: savedChartData, hasChanged: false }
-  }
-})()
+    return { data: savedChartData, hasChanged: false };
+  };
+};
+const getChartData = getChartDataGenerator();
 
-function getChartDimensions(plot: any, useContainerWidth: boolean): Dimensions {
-  const originalWidth: number = plot.attributes.width ?? DEFAULT_WIDTH
-  const originalHeight: number = plot.attributes.height ?? DEFAULT_HEIGHT
+export const setChartThemeGenerator = () => {
+  let currentTheme: string | null = null;
+  let appTheme: string | null = null;
 
-  let width: number = originalWidth
-  let height: number = originalHeight
+  return (newTheme: string, newAppTheme: Theme) => {
+    let themeChanged = false;
+    const renderedAppTheme = JSON.stringify(newAppTheme);
+
+    // The theme of the app changes if the theme provided by the component
+    // has changed or, we are using the streamlit theme and the theme of the
+    // app has changed (light mode to dark mode to custom theme)
+    if (
+      newTheme !== currentTheme ||
+      (currentTheme === "streamlit" && appTheme !== renderedAppTheme)
+    ) {
+      currentTheme = newTheme;
+      appTheme = renderedAppTheme;
+
+      const { use_theme } = window.Bokeh.require("core/properties");
+
+      if (
+        currentTheme === "streamlit" ||
+        !(currentTheme in window.Bokeh.Themes)
+      ) {
+        use_theme(streamlitTheme(newAppTheme));
+        themeChanged = true;
+      } else {
+        use_theme(window.Bokeh.Themes[currentTheme]);
+      }
+    }
+
+    return themeChanged;
+  };
+};
+const setChartTheme = setChartThemeGenerator();
+
+export function getChartDimensions(
+  plot: any,
+  useContainerWidth: boolean
+): Dimensions {
+  const originalWidth: number = plot.attributes.width ?? DEFAULT_WIDTH;
+  const originalHeight: number = plot.attributes.height ?? DEFAULT_HEIGHT;
+
+  let width: number = originalWidth;
+  let height: number = originalHeight;
 
   if (useContainerWidth) {
     // Use the width without a scrollbar to ensure the width always
     // looks good.
-    width = document.documentElement.clientWidth
-    height = (width / originalWidth) * originalHeight
+    width = document.documentElement.clientWidth;
+    height = (width / originalWidth) * originalHeight;
   }
 
-  return { width, height }
+  return { width, height };
 }
 
 function removeAllChildNodes(element: Node): void {
   while (element.lastChild) {
-    element.lastChild.remove()
+    element.lastChild.remove();
   }
 }
 
@@ -73,36 +113,31 @@ async function updateChart(data: any, useContainerWidth: boolean = false) {
    *
    * Note that the figure is the first element in roots array.
    */
-  const plot = data?.doc?.roots?.[0]
+  const plot = data?.doc?.roots?.[0];
 
   if (plot) {
-    const { width, height } = getChartDimensions(plot, useContainerWidth)
+    const { width, height } = getChartDimensions(plot, useContainerWidth);
 
     if (width > 0) {
-      plot.attributes.width = width
+      plot.attributes.width = width;
     }
     if (height > 0) {
-      plot.attributes.height = height
+      plot.attributes.height = height;
     }
   }
 
   if (chart !== null) {
-    removeAllChildNodes(chart)
-    // embed_item is actually an async function call, so a race condition
-    // can occur if updateChart is called twice, leading to two Bokeh charts
-    // to be embedded at the same time.
-    await window.Bokeh.embed.embed_item(data, "stBokehChart")
+    removeAllChildNodes(chart);
+    await window.Bokeh.embed.embed_item(data, "stBokehChart");
   }
 }
 
 interface ComponentData {
-  figure: string
-  use_container_width: boolean
-  bokeh_theme: string
+  figure: string;
+  use_container_width: boolean;
+  bokeh_theme: string;
 }
 
-let currentTheme: string | null = null
-let appTheme: string | null = null
 /**
  * The component's render function. This will be called immediately after
  * the component is initially loaded, and then again every time the
@@ -111,56 +146,34 @@ let appTheme: string | null = null
 async function onRender(event: Event): Promise<void> {
   const renderData: RenderData<ComponentData> = (
     event as CustomEvent<RenderData<ComponentData>>
-  ).detail
+  ).detail;
+  const {
+    figure,
+    bokeh_theme: bokehTheme,
+    use_container_width: useContainerWidth,
+  } = renderData.args;
 
-  const { data: chartData, hasChanged } = getChartData(renderData.args.figure)
-  const renderedAppTheme = JSON.stringify(renderData.theme)
+  const { data: chartData, hasChanged } = getChartData(figure);
+  const themeChanged = setChartTheme(bokehTheme, renderData.theme as Theme);
 
-  let themeChanged = false
-  if (
-    renderData.args.bokeh_theme !== currentTheme ||
-    appTheme !== renderedAppTheme
-  ) {
-    currentTheme = renderData.args.bokeh_theme
-    appTheme = renderedAppTheme
-
-    const { use_theme } = window.Bokeh.require("core/properties")
-
-    if (currentTheme === "streamlit") {
-      use_theme(streamlitTheme(renderData.theme as Theme))
-      themeChanged = true
-    } else if (currentTheme in window.Bokeh.Themes) {
-      use_theme(window.Bokeh.Themes[currentTheme])
-    } else {
-      use_theme(streamlitTheme(renderData.theme as Theme))
-      themeChanged = true
-    }
-  }
   // NOTE: Each script run forces Bokeh to provide different ids for their
   // elements. For that reason, this will always update the chart.
   // The only exception would be if the same info is sent down from the frontend
   // only. It shouldn't happen, but it's a safeguard.
   if (hasChanged || themeChanged) {
-    await updateChart(chartData, renderData.args.use_container_width)
+    await updateChart(chartData, useContainerWidth);
+    // The UI may change dimensions so we should ensure the iframe is the proper height
+    Streamlit.setFrameHeight();
   }
-
-  // RenderData.args is the JSON dictionary of arguments sent from the
-  // Python script.
-
-  // We tell Streamlit to update our frameHeight after each render event, in
-  // case it has changed. (This isn't strictly necessary for the example
-  // because our height stays fixed, but this is a low-cost function, so
-  // there's no harm in doing it redundantly.)
-  Streamlit.setFrameHeight()
 }
 
 // Attach our `onRender` handler to Streamlit's render event.
-Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, onRender)
+Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, onRender);
 
 // Tell Streamlit we're ready to start receiving data. We won't get our
 // first RENDER_EVENT until we call this function.
-Streamlit.setComponentReady()
+Streamlit.setComponentReady();
 
 // Finally, tell Streamlit to update our initial height. We omit the
 // `height` parameter here to have it default to our scrollHeight.
-Streamlit.setFrameHeight()
+Streamlit.setFrameHeight();

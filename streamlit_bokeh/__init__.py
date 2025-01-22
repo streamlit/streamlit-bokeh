@@ -48,7 +48,8 @@ import json
 if TYPE_CHECKING:
     from bokeh.plotting.figure import Figure
 
-ST_BOKEH_VERSION = importlib.metadata.version("streamlit_bokeh")
+__version__ = importlib.metadata.version("streamlit_bokeh")
+REQUIRED_BOKEH_VERSION = "3.6.1"
 
 def streamlit_bokeh(figure: "Figure", use_container_width=True, theme: str = "streamlit", key=None):
     """Create a new instance of "streamlit_bokeh".
@@ -84,13 +85,13 @@ def streamlit_bokeh(figure: "Figure", use_container_width=True, theme: str = "st
 
     """
 
-    if bokeh.__version__ != ST_BOKEH_VERSION:
+    if bokeh.__version__ != REQUIRED_BOKEH_VERSION:
         # TODO(ken): Update Error message
         raise Exception(
-            f"Streamlit only supports Bokeh version {ST_BOKEH_VERSION}, "
+            f"Streamlit only supports Bokeh version {REQUIRED_BOKEH_VERSION}, "
             f"but you have version {bokeh.__version__} installed. Please "
             f"run `pip install --force-reinstall --no-deps bokeh=="
-            f"{ST_BOKEH_VERSION}` to install the correct version."
+            f"{REQUIRED_BOKEH_VERSION}` to install the correct version."
         )
     
     # Call through to our private component function. Arguments we pass here

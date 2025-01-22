@@ -1,18 +1,19 @@
-import { Theme } from "streamlit-component-lib"
+import { Theme } from "streamlit-component-lib";
+import { transparentize } from "color2k";
 
-type BokehObjectType = string
-type AttrName = string
-type AttrValue = string | number
+type BokehObjectType = string;
+type AttrName = string;
+type AttrValue = string | number;
 
 // Bokeh does not export their Theme Class, so we
 // simulate close to the class provided by Bokeh
 // The relevant class is located here:
 // https://github.com/bokeh/bokeh/blob/3.6.2/bokehjs/src/lib/api/themes.ts#L17
 class BokehTheme {
-  readonly attrs: Record<BokehObjectType, Record<AttrName, AttrValue>>
+  readonly attrs: Record<BokehObjectType, Record<AttrName, AttrValue>>;
 
   constructor(attrs: Record<BokehObjectType, Record<AttrName, AttrValue>>) {
-    this.attrs = attrs
+    this.attrs = attrs;
   }
 
   get(obj: any, attr: string): unknown | undefined {
@@ -20,27 +21,26 @@ class BokehTheme {
     // an instance of a class that Bokeh provides through
     // their API, so we just iterate over all theclasses
     // to identify the type of the object.
-    let type = null
+    let type = null;
     Object.keys(this.attrs).forEach((key) => {
       if (obj instanceof window.Bokeh[key]) {
-        type = key
+        type = key;
       }
-    })
+    });
 
     if (type === null) {
-      return undefined
+      return undefined;
     }
 
-    const attrsForType = this.attrs[type] ?? {}
+    const attrsForType = this.attrs[type] ?? {};
 
-    return attrsForType[attr] ?? undefined
+    return attrsForType[attr] ?? undefined;
   }
 }
 
 export function streamlitTheme(theme: Theme): BokehTheme {
-  // @ts-expect-error fadedText10 is not defined in the Theme type
-  const { backgroundColor, fadedText10, secondaryBackgroundColor, textColor } =
-    theme
+  const { backgroundColor, secondaryBackgroundColor, textColor } = theme;
+  const fadedText10 = transparentize(textColor, 0.8);
 
   return new BokehTheme({
     Plot: {
@@ -117,5 +117,5 @@ export function streamlitTheme(theme: Theme): BokehTheme {
       text_font: '"Source Sans Pro", sans-serif',
       text_font_size: "1.15em",
     },
-  })
+  });
 }
