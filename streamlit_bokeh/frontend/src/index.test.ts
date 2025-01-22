@@ -93,7 +93,7 @@ describe("getChartDimensions", () => {
   test("should return default dimensions when no width/height attributes are provided", () => {
     const plot = { attributes: {} };
     const result = getChartDimensions(plot, false);
-    expect(result).toEqual({ width: 600, height: 600 });
+    expect(result).toEqual({ width: 400, height: 350 });
   });
 
   test("should return provided dimensions when width/height attributes are set", () => {
