@@ -32,7 +32,6 @@ import socket
 import subprocess
 import sys
 import time
-from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
 from random import randint
@@ -48,8 +47,6 @@ from playwright.sync_api import (
     FrameLocator,
     Locator,
     Page,
-    Response,
-    Route,
 )
 from pytest import FixtureRequest
 
