@@ -25,6 +25,7 @@ def get_latest_bokeh_version():
     response = requests.get(url)
     response.raise_for_status()  # Raises an HTTPError if the status is not 200
     data = response.json()
+    # This field will provide the latest stable version
     return data["info"]["version"]
 
 
