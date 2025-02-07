@@ -67,3 +67,9 @@ jobs:
           else
             echo "NOTICES is up to date."
           fi
+      - name: Upload new NOTICES
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: NOTICES
+          path: NOTICES
