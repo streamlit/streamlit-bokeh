@@ -26,7 +26,7 @@ ADDITIONAL_LICENSES = [
 if __name__ == "__main__":
     with open(OUTPUT_FILE, "w") as outfile:
         subprocess.run(
-            ["yarn", "licenses", "generate-disclaimer", "--production", "--recursive"],
+            ["yarn", "licenses", "generate-disclaimer", "--production"],
             cwd=str(FRONTEND_DIR),
             stdout=outfile,
             stderr=subprocess.PIPE,
