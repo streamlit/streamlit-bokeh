@@ -59,7 +59,7 @@ repos:
         exclude: |
           (?x)
           ^streamlit_bokeh/frontend/public/bokeh/
-          ^streamlit_bokeh/frontend/.yarn/
+          |^streamlit_bokeh/frontend/.yarn/
       - id: insert-license
         name: Add license for all Python files
         files: \.py$|\.pyi$
