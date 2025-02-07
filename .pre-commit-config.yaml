@@ -86,6 +86,7 @@ repos:
           (?x)
           ^streamlit_bokeh/frontend/public/bokeh
           |^streamlit_bokeh/frontend/public/fonts
+          |^NOTICES$
       - id: check-added-large-files
         args: ["--maxkb=1024"]
         exclude: |

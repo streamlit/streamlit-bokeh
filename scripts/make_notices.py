@@ -20,7 +20,7 @@ FRONTEND_DIR = SCRIPT_DIR.parent / "streamlit_bokeh/frontend"
 OUTPUT_FILE = SCRIPT_DIR.parent / "NOTICES"
 ADDITIONAL_LICENSES = [
     FRONTEND_DIR / "public/fonts/Source-Sans-Pro.LICENSE",
-    FRONTEND_DIR / "public/bokeh/bokeh.LICENSE",
+    FRONTEND_DIR / "public/bokeh/LICENSE.txt",
 ]
 
 if __name__ == "__main__":
