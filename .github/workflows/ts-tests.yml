@@ -51,11 +51,11 @@ jobs:
           yarn install --immutable
           yarn test
       - name: Audit frontend licenses
-        run: ./scripts/audit_frontend_licenses.py
+        run: python scripts/audit_frontend_licenses.py
       - name: Validate NOTICES
         run: |
           # Run script to make the notices. If it results in changes, warn the user and fail.
-          python ./scripts/make_notices.py
+          python scripts/make_notices.py
 
           git_status=$(git status --porcelain -- NOTICES)
           if [[ -n $git_status ]]; then
