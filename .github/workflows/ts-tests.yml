@@ -34,6 +34,11 @@ jobs:
           persist-credentials: false
           submodules: "recursive"
           fetch-depth: 2
+      - name: Enable and Prepare Latest Yarn
+        run: |
+          corepack enable
+          cd streamlit_bokeh/frontend
+          corepack install
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -42,9 +47,7 @@ jobs:
           cache-dependency-path: "**/yarn.lock"
       - name: Run frontend tests
         run: |
-          corepack enable
           cd streamlit_bokeh/frontend
-          corepack install
           yarn install --immutable
           yarn test
       - name: Audit frontend licenses

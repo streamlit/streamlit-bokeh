@@ -38,6 +38,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Enable and Prepare Latest Yarn
+        run: |
+          corepack enable
+          cd streamlit_bokeh/frontend
+          corepack install
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -46,9 +51,7 @@ jobs:
           cache-dependency-path: "**/yarn.lock"
       - name: Make frontend
         run: |
-          corepack enable
           cd streamlit_bokeh/frontend
-          corepack install
           yarn install --immutable
           yarn build
       # Combine hashes of the Python interpreter, Pipfile, and today's
