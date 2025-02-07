@@ -27,12 +27,18 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Enable and Prepare Yarn
+        run: |
+          corepack enable
+          cd streamlit_bokeh/frontend
+          corepack install
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
-          cache: "npm"
-          cache-dependency-path: "**/package-lock.json"
+          cache: "yarn"
+          cache-dependency-path: "**/yarn.lock"
 
       - name: Install dependencies
         run: pip install requests semver
@@ -41,22 +47,18 @@ jobs:
         id: compare_bokeh
         run: python scripts/update_bokeh_version.py
 
-      - name: Run npm install
+      - name: Run yarn install
         if: steps.compare_bokeh.outputs.needs_update == 'true'
-        id: npm_install
+        id: yarn_install
         run: |
           cd streamlit_bokeh/frontend
-          npm install
+          yarn install --immutable
 
       - name: Commit changes
         if: steps.compare_bokeh.outputs.needs_update == 'true'
         run: |
           echo "NEW_VERSION=${{ steps.compare_bokeh.outputs.new_version }}" >> $GITHUB_ENV
           BRANCH="release/${NEW_VERSION}"
-
-          cd streamlit_bokeh/frontend
-          npm install
-          cd ../..
 
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
