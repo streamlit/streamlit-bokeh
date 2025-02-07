@@ -11,18 +11,16 @@ jobs:
   if-release-branch:
     runs-on: ubuntu-latest
     outputs:
-      is_release: ${{ steps.check_branch.outputs.IS_RELEASE }}
+      is_release: ${{ steps.check_branch.outputs.is_release }}
     steps:
       - name: Check if PR was merged from a release branch
         id: check_branch
         run: |
           if [[ "${{ github.event.pull_request.merged }}" == "true" &&
                 "${{ github.event.pull_request.head.ref }}" =~ ^release/[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "IS_RELEASE=true" >> $GITHUB_ENV
-            echo "IS_RELEASE=true"
+            echo "::set-output name=is_release::true"
           else
-            echo "IS_RELEASE=false" >> $GITHUB_ENV
-            echo "IS_RELEASE=false"
+            echo "::set-output name=is_release::false"
           fi
 
   run-ts-tests:
@@ -56,6 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: release
     permissions:
+      # Needed to issue the tag
       contents: write
     steps:
       - name: Checkout Streamlit code
@@ -71,18 +70,24 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Enable and Prepare Yarn
+        run: |
+          corepack enable
+          cd streamlit_bokeh/frontend
+          corepack install
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
-          cache: "npm"
-          cache-dependency-path: "**/package-lock.json"
+          cache: "yarn"
+          cache-dependency-path: "**/yarn.lock"
 
       - name: Make frontend
         run: |
           cd streamlit_bokeh/frontend
-          npm install
-          npm run build
+          yarn install --immutable
+          yarn build
 
       - name: Create Python environment cache key
         run: |
@@ -121,6 +126,9 @@ jobs:
         run: |
           NEW_VERSION=$(echo "${{ github.event.pull_request.head.ref }}" | sed 's/release\///')
           if [[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "New version: $NEW_VERSION"
+            git config --global user.email "core+streamlitbot-github@streamlit.io"
+            git config --global user.name "Streamlit Bot"
             git tag "v${NEW_VERSION}"
             git push origin "v${NEW_VERSION}"
           else
