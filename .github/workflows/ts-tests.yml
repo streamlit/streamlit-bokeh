@@ -15,7 +15,7 @@ on:
 
 # Avoid duplicate workflows on same branch
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-playwright
+  group: ${{ github.workflow }}-${{ github.ref }}-ts-tests
   cancel-in-progress: true
 
 jobs:
@@ -42,6 +42,25 @@ jobs:
           cache-dependency-path: "**/package-lock.json"
       - name: Run frontend tests
         run: |
+          corepack enable
           cd streamlit_bokeh/frontend
-          npm install
-          npm run test
+          corepack install
+          yarn install --immutable
+          yarn test
+      - name: Audit frontend licenses
+        run: ./scripts/audit_frontend_licenses.py
+      - name: Validate NOTICES
+        run: |
+          # Run script to make the notices. If it results in changes, warn the user and fail.
+          python ./scripts/make_notices.py
+
+          git_status=$(git status --porcelain -- NOTICES)
+          if [[ -n $git_status ]]; then
+            echo "::error::The NOTICES file is out of date! Please run \`make notices\` and commit the result."
+            echo "::group::git diff NOTICES"
+            git diff NOTICES
+            echo "::endgroup::"
+            exit 1
+          else
+            echo "NOTICES is up to date."
+          fi

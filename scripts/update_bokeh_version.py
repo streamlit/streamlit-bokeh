@@ -63,6 +63,7 @@ def download_files(new_version, destination):
         f"https://cdn.bokeh.org/bokeh/release/bokeh-tables-{new_version}.min.js",
         f"https://cdn.bokeh.org/bokeh/release/bokeh-widgets-{new_version}.min.js",
         f"https://cdn.bokeh.org/bokeh/release/bokeh-{new_version}.min.js",
+        f"https://raw.githubusercontent.com/bokeh/bokeh/refs/tags/{new_version}/LICENSE.txt",
     ]
 
     for url in files_to_download:

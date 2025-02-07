@@ -39,6 +39,10 @@ IGNORE_PATTERN = re.compile(
     r"|(LICENSE|NOTICES|CODE_OF_CONDUCT\.md|README\.md)$"
     # Exclude files, because they do not support comments
     r"|\.(json|prettierrc|nvmrc)$"
+    # Exclude yarn.lock
+    r"|yarn\.lock$"
+    # Exclude .yarn folder
+    r"|streamlit_bokeh\/frontend\/\.yarn/"
     # .gitignore
     r"|\.(gitignore)$"
     # MANIFEST.in

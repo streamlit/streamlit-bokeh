@@ -46,9 +46,11 @@ jobs:
           cache-dependency-path: "**/package-lock.json"
       - name: Make frontend
         run: |
+          corepack enable
           cd streamlit_bokeh/frontend
-          npm install
-          npm run build
+          corepack install
+          yarn install --immutable
+          yarn build
       # Combine hashes of the Python interpreter, Pipfile, and today's
       # date into a file whose hash will key the Python virtualenv.
       #
