@@ -63,9 +63,9 @@ jobs:
           branch: "release/${{ steps.compare_bokeh.outputs.new_version }}"
           base: main
           add-paths: "."
-          commit-message: "Update Bokeh to ${{ steps.compare_bokeh.outputs.new_version }}"
-          title: "Update Bokeh to ${{ steps.compare_bokeh.outputs.new_bokeh_version }}"
-          body: "This PR updates Bokeh to version ${{ steps.compare_bokeh.outputs.new_bokeh_version }}."
+          commit-message: "Update Bokeh to ${{ steps.compare_bokeh.outputs.new_bokeh_version }} and release ${{ steps.compare_bokeh.outputs.new_version }}"
+          title: "Release ${{ steps.compare_bokeh.outputs.new_version }} with Bokeh version ${{ steps.compare_bokeh.outputs.new_bokeh_version }}"
+          body: "This PR updates Bokeh to version ${{ steps.compare_bokeh.outputs.new_bokeh_version }}. and releases it as ${{ steps.compare_bokeh.outputs.new_version }}"
 
       - name: Successful Update Bokeh Slack Message
         if: steps.create_pr.outputs.pull-request-url != ''
