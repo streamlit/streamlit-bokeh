@@ -54,16 +54,16 @@ streamlit_bokeh(YOUR_BOKEH_FIGURE, use_container_width=True, theme="streamlit", 
 
 #### Parameters:
 
-- **`figure`** (_bokeh.plotting.figure_): The Bokeh figure object to render.
-- **`use_container_width`** (_bool_, optional): Adjust the plot to fit the container's full width. Default is `True`.
-- **`theme`** (_str_, optional): Theme for the plot. Options:
+- **`figure`** (_bokeh.plotting.figure_): The Bokeh figure object to display.
+- **`use_container_width`** (_bool_, optional): Whether to override the figure's native width with the width of the parent container. This is `True`  by default.
+- **`theme`** (_str_, optional): The theme for the plot. This can be one of the following strings:
   - `"streamlit"` (default): Matches Streamlit's current theme.
-  - Bokeh Theme name including:
-    - `caliber`
-    - `light_minimal`
-    - `dark_minimal`
-    - `contrast`
-- **`key`** (_str_, optional but recommended): Unique key to differentiate multiple figures in the same app.
+  - A Bokeh theme name including:
+    - `"caliber"`
+    - `"light_minimal"`
+    - `"dark_minimal"`
+    - `"contrast"`
+- **`key`** (_str_, optional but recommended): An optional string to give this element a stable identity. If this is `None` (default), this element's identity will be determined based on the values of the other parameters.
 
 ---
 
