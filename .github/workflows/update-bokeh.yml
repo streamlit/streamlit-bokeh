@@ -2,8 +2,8 @@ name: "Update Bokeh"
 
 on:
   schedule:
-    # Run job at 9:30am PST or 10:30am PDT
-    - cron: "30 17 * * *"
+    # Run job at 9:30am PST or 10:30am PDT on Tuesdays
+    - cron: "30 17 * * 2"
   # Allows the check to be manually triggered
   workflow_dispatch:
 
