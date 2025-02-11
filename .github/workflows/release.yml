@@ -56,6 +56,7 @@ jobs:
     permissions:
       # Needed to issue the tag
       contents: write
+      id-token: write
     steps:
       - name: Checkout Streamlit code
         uses: actions/checkout@v4
