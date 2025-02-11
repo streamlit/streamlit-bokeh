@@ -2,6 +2,10 @@
 
 A lightweight Python package that seamlessly integrates **Bokeh** plots into **Streamlit** apps, allowing for interactive, customizable, and responsive visualizations with minimal effort.
 
+## Filing Issues
+
+Please file [bug reports](https://github.com/streamlit/streamlit/issues/new?template=bug_report.yml) and [enhancement requests](https://github.com/streamlit/streamlit/issues/new?template=feature_request.yml) through our main Streamlit repo.
+
 ## 🚀 Features
 
 - Effortlessly embed Bokeh figures in Streamlit apps.
@@ -91,6 +95,14 @@ p.line(x, y, legend_label="Growth", line_width=3, color="green")
 # Display in Streamlit
 streamlit_bokeh(p, use_container_width=True, key="plot1")
 ```
+
+---
+
+## 📚 Versioning
+
+We designed the versioning scheme for this custom component to mirror the Bokeh version with the exception of the patch number. We reserve that so we can make bug fixes and new (mostly compatible) features.
+
+For example, `3.6.x` will mirror a version of Bokeh that's `3.6.y`.
 
 ---
 
