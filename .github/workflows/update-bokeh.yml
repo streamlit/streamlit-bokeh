@@ -72,11 +72,11 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           RUN_ID: ${{ github.run_id }}
-        run: python scripts/slack_notifications.py update-bokeh success ${{ steps.create_pr.outputs.pull-request-url }}
+        run: python scripts/slack_notification.py update-bokeh success ${{ steps.create_pr.outputs.pull-request-url }}
 
       - name: Failed Update Bokeh Slack Message
         if: failure()
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           RUN_ID: ${{ github.run_id }}
-        run: python scripts/slack_notifications.py update-bokeh failure
+        run: python scripts/slack_notification.py update-bokeh failure
