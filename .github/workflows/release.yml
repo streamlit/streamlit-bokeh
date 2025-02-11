@@ -142,11 +142,11 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           RUN_ID: ${{ github.run_id }}
-        run: python scripts/slack_notifications.py release success
+        run: python scripts/slack_notification.py release success
 
       - name: Failed Release Slack Message
         if: failure()
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           RUN_ID: ${{ github.run_id }}
-        run: python scripts/slack_notifications.py release failure
+        run: python scripts/slack_notification.py release failure
