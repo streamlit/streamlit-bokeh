@@ -61,7 +61,7 @@ if TYPE_CHECKING:
     from bokeh.plotting.figure import Figure
 
 __version__ = importlib.metadata.version("streamlit_bokeh")
-REQUIRED_BOKEH_VERSION = "3.6.2"
+REQUIRED_BOKEH_VERSION = "3.6.3"
 
 
 def streamlit_bokeh(
