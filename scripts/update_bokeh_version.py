@@ -1,4 +1,4 @@
-# Copyright (c) Streamlit Inc. (2018-2022) Snowflake Inc. (2022-2025)
+# Copyright (c) Snowflake Inc. (2025)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ import os
 import re
 import requests
 import semver
+import subprocess
 
 SETUP_PY_PATH = "setup.py"
 
@@ -63,6 +64,7 @@ def download_files(new_version, destination):
         f"https://cdn.bokeh.org/bokeh/release/bokeh-tables-{new_version}.min.js",
         f"https://cdn.bokeh.org/bokeh/release/bokeh-widgets-{new_version}.min.js",
         f"https://cdn.bokeh.org/bokeh/release/bokeh-{new_version}.min.js",
+        f"https://raw.githubusercontent.com/bokeh/bokeh/refs/tags/{new_version}/LICENSE.txt",
     ]
 
     for url in files_to_download:
@@ -187,6 +189,25 @@ def update_index_html(public_dir, old_version, new_version):
         print("No index.html found in frontend/public. Skipping HTML update.")
 
 
+def check_remote_branch_exists(remote: str, new_version: str) -> bool:
+    branch_name = f"release/{new_version}"
+    try:
+        # List all remote branches
+        result = subprocess.run(
+            ["git", "ls-remote", "--heads", remote, branch_name],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True,
+        )
+
+        # Check if the branch exists in the output
+        return bool(result.stdout.strip())
+    except subprocess.CalledProcessError as e:
+        print(f"Error checking remote branch: {e.stderr.strip()}")
+        return False
+
+
 if __name__ == "__main__":
     new_bokeh_version = get_latest_bokeh_version()
     new_bokeh_version_semver = semver.Version.parse(new_bokeh_version)
@@ -211,6 +232,12 @@ if __name__ == "__main__":
 
     if new_bokeh_version == old_bokeh_version:
         print("No new version available")
+        print("::set-output name=needs_update::false")
+        exit(0)
+
+    # check if there's a release branch for new_version
+    if check_remote_branch_exists("origin", new_version):
+        print(f"Release branch for {new_version} already exists")
         print("::set-output name=needs_update::false")
         exit(0)
 
@@ -240,3 +267,4 @@ if __name__ == "__main__":
     print("::set-output name=needs_update::true")
     print(f"::set-output name=old_version::{old_version}")
     print(f"::set-output name=new_version::{new_version}")
+    print(f"::set-output name=new_bokeh_version::{new_bokeh_version}")

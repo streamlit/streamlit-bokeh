@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) Streamlit Inc. (2018-2022) Snowflake Inc. (2022-2025)
+# Copyright (c) Snowflake Inc. (2025)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,6 +39,10 @@ IGNORE_PATTERN = re.compile(
     r"|(LICENSE|NOTICES|CODE_OF_CONDUCT\.md|README\.md)$"
     # Exclude files, because they do not support comments
     r"|\.(json|prettierrc|nvmrc)$"
+    # Exclude yarn.lock
+    r"|yarn\.lock$"
+    # Exclude .yarn folder
+    r"|streamlit_bokeh\/frontend\/\.yarn/"
     # .gitignore
     r"|\.(gitignore)$"
     # MANIFEST.in

@@ -15,7 +15,7 @@ on:
 
 # Avoid duplicate workflows on same branch
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-playwright
+  group: ${{ github.workflow }}-${{ github.ref }}-ts-tests
   cancel-in-progress: true
 
 jobs:
@@ -34,14 +34,42 @@ jobs:
           persist-credentials: false
           submodules: "recursive"
           fetch-depth: 2
+      - name: Enable and Prepare Latest Yarn
+        run: |
+          corepack enable
+          cd streamlit_bokeh/frontend
+          corepack install
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
-          cache: "npm"
-          cache-dependency-path: "**/package-lock.json"
+          cache: "yarn"
+          cache-dependency-path: "**/yarn.lock"
       - name: Run frontend tests
         run: |
           cd streamlit_bokeh/frontend
-          npm install
-          npm run test
+          yarn install --immutable
+          yarn test
+      - name: Audit frontend licenses
+        run: python scripts/audit_frontend_licenses.py
+      - name: Validate NOTICES
+        run: |
+          # Run script to make the notices. If it results in changes, warn the user and fail.
+          python scripts/make_notices.py
+
+          git_status=$(git status --porcelain -- NOTICES)
+          if [[ -n $git_status ]]; then
+            echo "::error::The NOTICES file is out of date! Please run \`make notices\` and commit the result."
+            echo "::group::git diff NOTICES"
+            git diff NOTICES
+            echo "::endgroup::"
+            exit 1
+          else
+            echo "NOTICES is up to date."
+          fi
+      - name: Upload new NOTICES
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: NOTICES
+          path: NOTICES

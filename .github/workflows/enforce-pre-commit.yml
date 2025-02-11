@@ -50,6 +50,10 @@ jobs:
           pre-commit install-hooks
         shell: bash
       - name: Install prettier
-        run: cd streamlit_bokeh/frontend && npm install
+        run: |
+          corepack enable
+          cd streamlit_bokeh/frontend
+          corepack install
+          yarn install --immutable
       - name: Run pre-commit hooks
         run: PRE_COMMIT_NO_CONCURRENCY=true pre-commit run --show-diff-on-failure --color=always --all-files

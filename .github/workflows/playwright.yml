@@ -38,17 +38,22 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Enable and Prepare Latest Yarn
+        run: |
+          corepack enable
+          cd streamlit_bokeh/frontend
+          corepack install
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
-          cache: "npm"
-          cache-dependency-path: "**/package-lock.json"
+          cache: "yarn"
+          cache-dependency-path: "**/yarn.lock"
       - name: Make frontend
         run: |
           cd streamlit_bokeh/frontend
-          npm install
-          npm run build
+          yarn install --immutable
+          yarn build
       # Combine hashes of the Python interpreter, Pipfile, and today's
       # date into a file whose hash will key the Python virtualenv.
       #
