@@ -2,10 +2,10 @@ blank_issues_enabled: false
 contact_links:
   - name: 🐛 Bug report
     url: https://github.com/streamlit/streamlit/issues/new?template=bug_report.yml
-    about: Submit a bug report to help us improve streamlit-bokeh
+    about: Submit a bug report to help us improve streamlit-bokeh (through our main Streamlit repository)
   - name: ✨ Feature request
     url: https://github.com/streamlit/streamlit/issues/new?template=feature_request.yml
-    about: Suggest a feature or enhancement for streamlit-bokeh
+    about: Suggest a feature or enhancement for streamlit-bokeh (through our main Streamlit repository)
   - name: ❓ Anything else?
     url: https://discuss.streamlit.io/
     about: Ask usage questions on the Streamlit community forum
