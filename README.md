@@ -59,7 +59,7 @@ streamlit_bokeh(YOUR_BOKEH_FIGURE, use_container_width=True, theme="streamlit", 
 #### Parameters:
 
 - **`figure`** (_bokeh.plotting.figure_): The Bokeh figure object to display.
-- **`use_container_width`** (_bool_, optional): Whether to override the figure's native width with the width of the parent container. This is `True`  by default.
+- **`use_container_width`** (_bool_, optional): Whether to override the figure's native width with the width of the parent container. This is `True` by default.
 - **`theme`** (_str_, optional): The theme for the plot. This can be one of the following strings:
   - `"streamlit"` (default): Matches Streamlit's current theme.
   - A Bokeh theme name including:
@@ -108,7 +108,7 @@ For example, `3.6.x` will mirror a version of Bokeh that's `3.6.y`.
 
 ## 📝 Contributing
 
-Feel free to file issues in [our Streamlit Repository](https://github.com/streamlit/streamlit-bokeh/issues/new/choose).
+Feel free to file issues in [our Streamlit Repository](https://github.com/streamlit/streamlit/issues/new/choose).
 
 Contributions are welcome 🚀, however, please inform us before building a feature.
 
