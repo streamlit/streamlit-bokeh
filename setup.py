@@ -21,7 +21,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setuptools.setup(
     name="streamlit-bokeh",
-    version="3.6.2",
+    version="3.4.0",
     author="Snowflake Inc",
     author_email="hello@streamlit.io",
     description="Streamlit component that allows you to render Bokeh charts",
@@ -57,7 +57,7 @@ setuptools.setup(
         # If your component has other Python dependencies, list
         # them here.
         "streamlit>=1.26",
-        "bokeh==3.6.3",
+        "bokeh==3.4.3",
     ],
     extras_require={
         "devel": [
