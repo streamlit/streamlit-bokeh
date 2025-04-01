@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-bokeh==3.7.0
+bokeh==3.7.2
 bokeh-sampledata
 pixelmatch>=0.3.0,<1.0.0
 playwright==1.49.*
@@ -20,4 +20,4 @@ pytest-playwright>=0.3.3
 pytest-xdist
 scipy
 testfixtures
-dist/streamlit_bokeh-3.7.0-py3-none-any.whl
+dist/streamlit_bokeh-3.7.1-py3-none-any.whl
