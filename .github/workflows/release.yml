@@ -137,6 +137,9 @@ jobs:
             exit 1
           fi
 
+      - name: Install prerequisites of slack message
+        run: pip install requests
+
       - name: Successful Release Slack Message
         if: success()
         env:
