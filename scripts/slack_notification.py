@@ -43,17 +43,17 @@ def send_notification():
             }
         else:
             payload = {
-                "text": f":blobonfire: Bokeh update failed! - <https://github.com/streamlit/streamlit/actions/runs/{run_id}|Link to run>"
+                "text": f":blobonfire: Bokeh update failed! - <https://github.com/streamlit/streamlit-bokeh/actions/runs/{run_id}|Link to run>"
             }
 
     if workflow == "release":
         if message_key == "success":
             payload = {
-                "text": f":rocket: Bokeh Custom Component Release was successful! - <https://github.com/streamlit/streamlit/actions/runs/{run_id}|Link to run>"
+                "text": f":rocket: Bokeh Custom Component Release was successful! - <https://github.com/streamlit/streamlit-bokeh/actions/runs/{run_id}|Link to run>"
             }
         else:
             payload = {
-                "text": f":blobonfire: Bokeh Custom Component Release was failed! - <https://github.com/streamlit/streamlit/actions/runs/{run_id}|Link to run>"
+                "text": f":blobonfire: Bokeh Custom Component Release was failed! - <https://github.com/streamlit/streamlit-bokeh/actions/runs/{run_id}|Link to run>"
             }
 
     if payload:
