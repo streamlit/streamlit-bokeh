@@ -15,6 +15,7 @@
  */
 
 import { Theme } from "streamlit-component-lib"
+import { describe, test, expect, beforeEach } from "vitest"
 
 import {
   getChartDataGenerator,
