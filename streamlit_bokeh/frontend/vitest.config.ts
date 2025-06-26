@@ -14,25 +14,17 @@
  * limitations under the License.
  */
 
-import { vi } from "vitest"
+import { defineConfig, mergeConfig } from "vitest/config"
+import viteConfig from "./vite.config"
 
-const useTheme = vi.fn()
-
-window.Bokeh = {
-  Themes: {
-    caliber: null,
-    dark_minimal: null,
-    light_minimal: null,
-    contrast: null,
-    night_sky: null,
-  },
-  require: name => {
-    if (name === "core/properties") {
-      return {
-        use_theme: useTheme,
-      }
-    }
-
-    return {}
-  },
-}
+export default defineConfig(configEnv =>
+  mergeConfig(
+    viteConfig(configEnv),
+    defineConfig({
+      test: {
+        environment: "jsdom",
+        setupFiles: ["./src/setupTests.js"],
+      },
+    })
+  )
+)

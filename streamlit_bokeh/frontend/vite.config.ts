@@ -14,25 +14,27 @@
  * limitations under the License.
  */
 
-import { vi } from "vitest"
+import { defineConfig, loadEnv, UserConfig } from "vite"
+import react from "@vitejs/plugin-react-swc"
 
-const useTheme = vi.fn()
+/**
+ * Vite configuration for Streamlit React Component development
+ *
+ * @see https://vitejs.dev/config/ for complete Vite configuration options
+ */
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd())
 
-window.Bokeh = {
-  Themes: {
-    caliber: null,
-    dark_minimal: null,
-    light_minimal: null,
-    contrast: null,
-    night_sky: null,
-  },
-  require: name => {
-    if (name === "core/properties") {
-      return {
-        use_theme: useTheme,
-      }
-    }
+  const port = env.VITE_PORT ? parseInt(env.VITE_PORT) : 3001
 
-    return {}
-  },
-}
+  return {
+    base: "./",
+    plugins: [react()],
+    server: {
+      port,
+    },
+    build: {
+      outDir: "build",
+    },
+  } satisfies UserConfig
+})
