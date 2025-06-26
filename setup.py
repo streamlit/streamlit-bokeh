@@ -36,6 +36,7 @@ setuptools.setup(
     url="https://streamlit.io",
     license="Apache License 2.0",
     packages=setuptools.find_packages(),
+    package_data={"streamlit_bokeh": ["py.typed"]},
     include_package_data=True,
     classifiers=[
         "Development Status :: 5 - Production/Stable",
