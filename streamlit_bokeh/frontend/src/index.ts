@@ -54,18 +54,18 @@ const DEFAULT_HEIGHT = 350 // px
  * if the figure is the same as the last time it was called.
  */
 export const getChartDataGenerator = () => {
-  let savedFigure: string | null = null
-  let savedChartData: object | null = null
+  const savedFigure: Record<string, string | null> = {}
+  const savedChartData: Record<string, object | null> = {}
 
-  return (figure: string) => {
-    if (figure !== savedFigure) {
-      savedFigure = figure
-      savedChartData = JSON.parse(figure)
+  return (figure: string, key: string) => {
+    if (figure !== savedFigure[key]) {
+      savedFigure[key] = figure
+      savedChartData[key] = JSON.parse(figure)
 
-      return { data: savedChartData, hasChanged: true }
+      return { data: savedChartData[key], hasChanged: true }
     }
 
-    return { data: savedChartData, hasChanged: false }
+    return { data: savedChartData[key], hasChanged: false }
   }
 }
 const getChartData = getChartDataGenerator()
@@ -146,7 +146,7 @@ async function updateChart(
    * When you create a bokeh chart in your python script, you can specify
    * the width: p = figure(title="simple line example", x_axis_label="x", y_axis_label="y", plot_width=200);
    * In that case, the json object will contains an attribute called
-   * plot_width (or plot_heigth) inside the plot reference.
+   * plot_width (or plot_height) inside the plot reference.
    * If that values are missing, we can set that values to make the chart responsive.
    *
    * Note that the figure is the first element in roots array.
@@ -195,9 +195,10 @@ async function onRender(event: Event): Promise<void> {
     figure,
     bokeh_theme: bokehTheme,
     use_container_width: useContainerWidth,
+    key,
   } = renderData.args
 
-  const { data: chartData, hasChanged } = getChartData(figure)
+  const { data: chartData, hasChanged } = getChartData(figure, key)
   // @ts-expect-error TODO: Migrating to v2
   const themeChanged = setChartTheme(bokehTheme, renderData.theme as Theme)
 
@@ -275,10 +276,18 @@ const loadCss = async ({
   parentElement.appendChild(cssElement)
 }
 
+/**
+ * Module-scoped state to avoid loading the Bokeh scripts multiple times per
+ * component.
+ */
+const hasInitialized: Record<string, boolean> = {}
+
 export default async function (
   component: StV2ComponentArgs<{}, ComponentData>
 ) {
-  console.log("Streamlit Bokeh component rendered by Streamlit", component)
+  console.debug("Streamlit Bokeh component rendered by Streamlit", component, {
+    hasInitialized,
+  })
   const { parentElement } = component
   const {
     figure,
@@ -287,13 +296,14 @@ export default async function (
     key,
   } = component.data
 
-  debugger
-
-  await Promise.all([
-    loadBokeh({ parentElement }),
-    loadFonts({ parentElement }),
-    loadCss({ parentElement }),
-  ])
+  if (!hasInitialized[key]) {
+    hasInitialized[key] = true
+    await Promise.all([
+      loadBokeh({ parentElement }),
+      loadFonts({ parentElement }),
+      loadCss({ parentElement }),
+    ])
+  }
 
   const container =
     parentElement.querySelector<HTMLDivElement>(".stBokehContainer")
@@ -305,7 +315,7 @@ export default async function (
     throw new Error("Chart not found")
   }
 
-  const { data: chartData, hasChanged } = getChartData(figure)
+  const { data: chartData, hasChanged } = getChartData(figure, key)
   // TODO: Support theming.
   const themeChanged = false
   // const themeChanged = setChartTheme(bokehTheme, renderData.theme as Theme)

@@ -123,9 +123,20 @@ def make_bokeh_figure(title: str):
     return bokeh_figure
 
 
+@st.cache_resource
+def make_bokeh_figures():
+    return [
+        make_bokeh_figure("Simple Line Example"),
+        make_bokeh_figure("Simple Line Example 2"),
+        make_bokeh_figure("Simple Line Example 3"),
+    ]
+
+
+BOKEH_FIGURES = make_bokeh_figures()
+
 # Render in Streamlit
 streamlit_bokeh(
-    make_bokeh_figure("Simple Line Example"),
+    BOKEH_FIGURES[0],
     theme="streamlit",
     key="my_unique_key",
     use_container_width=True,
@@ -137,7 +148,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     streamlit_bokeh(
-        make_bokeh_figure("Simple Line Example 2"),
+        BOKEH_FIGURES[1],
         theme="streamlit",
         key="my_unique_key_1",
         use_container_width=True,
@@ -145,7 +156,7 @@ with col1:
 
 with col2:
     streamlit_bokeh(
-        make_bokeh_figure("Simple Line Example 3"),
+        BOKEH_FIGURES[2],
         theme="streamlit",
         key="my_unique_key_2",
         use_container_width=True,
