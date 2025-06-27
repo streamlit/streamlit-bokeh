@@ -91,13 +91,17 @@ def streamlit_bokeh(
     out = st.components.v2.component(
         "streamlit_bokeh",
         js=Path(__file__).parent / "frontend/build/index.mjs",
-        html="""<div id="stBokehChart"></div>""",
+        html=f"""<div class="stBokehContainer"><div id="stBokehChart_{key}"></div></div>""",
         # html=Path(__file__).parent / "frontend/build/index.html",
         key=key,
         data={
             "figure": json.dumps(json_item(figure)),
             "bokeh_theme": theme,
+            "use_container_width": use_container_width,
+            "key": key,
         },
+        # Given the Bokeh.js API, which relies on `document.getElementById`, we
+        # must turn this off so that the DOM element can be found.
         isolate_styles=False,
     )
     return out
@@ -110,13 +114,43 @@ st.title("Streamlit Bokeh Example")
 x = [1, 2, 3, 4, 5]
 y = [6, 7, 2, 4, 5]
 
-# Create Bokeh figure
-YOUR_BOKEH_FIGURE = figure(
-    title="Simple Line Example", x_axis_label="x", y_axis_label="y"
-)
-YOUR_BOKEH_FIGURE.line(x, y, legend_label="Trend", line_width=2)
+
+def make_bokeh_figure(title: str):
+    # Create Bokeh figure
+    bokeh_figure = figure(title=title, x_axis_label="x", y_axis_label="y")
+    bokeh_figure.line(x, y, legend_label="Trend", line_width=2)
+
+    return bokeh_figure
+
 
 # Render in Streamlit
-streamlit_bokeh(YOUR_BOKEH_FIGURE, theme="streamlit", key="my_unique_key")
+streamlit_bokeh(
+    make_bokeh_figure("Simple Line Example"),
+    theme="streamlit",
+    key="my_unique_key",
+    use_container_width=True,
+)
 
-st.write("Some text below to show that the component height is correct")
+st.write("Bokeh in columns ⬇️")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    streamlit_bokeh(
+        make_bokeh_figure("Simple Line Example 2"),
+        theme="streamlit",
+        key="my_unique_key_1",
+        use_container_width=True,
+    )
+
+with col2:
+    streamlit_bokeh(
+        make_bokeh_figure("Simple Line Example 3"),
+        theme="streamlit",
+        key="my_unique_key_2",
+        use_container_width=True,
+    )
+
+
+if st.button("Update"):
+    st.write("Clicked")
