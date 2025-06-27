@@ -50,7 +50,7 @@ IGNORE_PATTERN = re.compile(
     # .env file
     r"|streamlit_bokeh\/frontend\/\.env$"
     # Vendored files
-    r"|^streamlit_bokeh/frontend/public/bokeh/",
+    r"|^streamlit_bokeh/frontend/src/assets/bokeh/",
     re.IGNORECASE,
 )
 

@@ -18,6 +18,18 @@
 import { BidiComponentState, StV2ComponentArgs } from "./ST_TEMP"
 import { streamlitTheme } from "./streamlit-theme"
 
+import bokehMin from "./assets/bokeh/bokeh-3.7.3.min.js?url"
+import bokehWidgets from "./assets/bokeh/bokeh-widgets-3.7.3.min.js?url"
+import bokehTables from "./assets/bokeh/bokeh-tables-3.7.3.min.js?url"
+import bokehApi from "./assets/bokeh/bokeh-api-3.7.3.min.js?url"
+import bokehGl from "./assets/bokeh/bokeh-gl-3.7.3.min.js?url"
+
+import SourceSansProRegular from "./assets/fonts/SourceSansPro-Regular.woff2?url"
+import SourceSansProSemiBold from "./assets/fonts/SourceSansPro-SemiBold.woff2?url"
+import SourceSansProBold from "./assets/fonts/SourceSansPro-Bold.woff2?url"
+
+import indexCss from "./assets/index.css?url"
+
 declare global {
   interface Window {
     Bokeh: any
@@ -193,6 +205,20 @@ async function onRender(event: Event): Promise<void> {
   // Streamlit.setFrameHeight()
 }
 
+const loadFonts = async ({
+  parentElement,
+}: {
+  parentElement: HTMLElement | ShadowRoot
+}) => {
+  const fonts = [SourceSansProRegular, SourceSansProSemiBold, SourceSansProBold]
+  for (const font of fonts) {
+    const fontElement = document.createElement("link")
+    // fontElement.rel = "preload"
+    fontElement.href = font
+    parentElement.appendChild(fontElement)
+  }
+}
+
 const loadBokeh = async ({
   parentElement,
 }: {
@@ -202,8 +228,7 @@ const loadBokeh = async ({
   // This is to avoid race conditions since plugins require window.Bokeh to be defined
   // before they can be loaded.
   const bokehScript = document.createElement("script")
-  bokehScript.src =
-    "https://cdnjs.cloudflare.com/ajax/libs/bokeh/3.7.3/bokeh.min.js"
+  bokehScript.src = bokehMin
   parentElement.appendChild(bokehScript)
 
   // Wait for window.Bokeh to be defined
@@ -222,12 +247,7 @@ const loadBokeh = async ({
     }, 100)
   })
 
-  const bokehScripts = [
-    "https://cdnjs.cloudflare.com/ajax/libs/bokeh/3.7.3/bokeh-widgets.min.js",
-    "https://cdnjs.cloudflare.com/ajax/libs/bokeh/3.7.3/bokeh-tables.min.js",
-    "https://cdnjs.cloudflare.com/ajax/libs/bokeh/3.7.3/bokeh-api.min.js",
-    "https://cdnjs.cloudflare.com/ajax/libs/bokeh/3.7.3/bokeh-gl.min.js",
-  ]
+  const bokehScripts = [bokehWidgets, bokehTables, bokehApi, bokehGl]
 
   for (const script of bokehScripts) {
     const scriptElement = document.createElement("script")
@@ -236,13 +256,28 @@ const loadBokeh = async ({
   }
 }
 
+const loadCss = async ({
+  parentElement,
+}: {
+  parentElement: HTMLElement | ShadowRoot
+}) => {
+  const cssElement = document.createElement("link")
+  cssElement.rel = "stylesheet"
+  cssElement.href = indexCss
+  parentElement.appendChild(cssElement)
+}
+
 export default async function (
   component: StV2ComponentArgs<{}, ComponentData>
 ) {
   console.log("Streamlit Bokeh component rendered by Streamlit", component)
   const { parentElement } = component
 
-  await loadBokeh({ parentElement })
+  await Promise.all([
+    loadBokeh({ parentElement }),
+    loadFonts({ parentElement }),
+    loadCss({ parentElement }),
+  ])
 
   const chart = parentElement.querySelector<HTMLDivElement>("#stBokehChart")
 
