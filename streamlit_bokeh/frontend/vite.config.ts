@@ -35,6 +35,17 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: "build",
+      lib: {
+        entry: "./src/index.ts",
+        name: "MyComponent",
+        formats: ["es"],
+        fileName: "index",
+      },
+      rollupOptions: {
+        output: {
+          manualChunks: undefined,
+        },
+      },
     },
   } satisfies UserConfig
 })
