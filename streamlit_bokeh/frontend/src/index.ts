@@ -276,6 +276,17 @@ const loadCss = async ({
   parentElement.appendChild(cssElement)
 }
 
+const getOrCreateChart = (container: HTMLDivElement, key: string) => {
+  const chart = container.querySelector<HTMLDivElement>(`#stBokehChart_${key}`)
+  if (!chart) {
+    const newChart = document.createElement("div")
+    newChart.id = `stBokehChart_${key}`
+    container.appendChild(newChart)
+    return newChart
+  }
+  return chart
+}
+
 /**
  * Module-scoped state to avoid loading the Bokeh scripts multiple times per
  * component.
@@ -307,11 +318,14 @@ export default async function (
 
   const container =
     parentElement.querySelector<HTMLDivElement>(".stBokehContainer")
-  const chart = parentElement.querySelector<HTMLDivElement>(
-    `#stBokehChart_${key}`
-  )
 
-  if (!chart || !container) {
+  if (!container) {
+    throw new Error("Container not found")
+  }
+
+  const chart = getOrCreateChart(container, key)
+
+  if (!chart) {
     throw new Error("Chart not found")
   }
 
