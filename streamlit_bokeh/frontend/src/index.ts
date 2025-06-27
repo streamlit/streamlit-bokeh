@@ -15,7 +15,7 @@
  */
 
 // import { Theme } from "streamlit-component-lib"
-import { BidiComponentState, StV2ComponentArgs } from "./ST_TEMP"
+import { StV2ComponentArgs } from "./ST_TEMP"
 import { streamlitTheme } from "./streamlit-theme"
 
 import bokehMin from "./assets/bokeh/bokeh-3.7.3.min.js?url"
@@ -179,39 +179,6 @@ interface ComponentData {
   use_container_width: boolean
   bokeh_theme: string
   key: string
-}
-
-/**
- * The component's render function. This will be called immediately after
- * the component is initially loaded, and then again every time the
- * component gets new data from Python.
- */
-async function onRender(event: Event): Promise<void> {
-  // @ts-expect-error TODO: Migrating to v2
-  const renderData: RenderData<ComponentData> =
-    // @ts-expect-error TODO: Migrating to v2
-    (event as CustomEvent<RenderData<ComponentData>>).detail
-  const {
-    figure,
-    bokeh_theme: bokehTheme,
-    use_container_width: useContainerWidth,
-    key,
-  } = renderData.args
-
-  const { data: chartData, hasChanged } = getChartData(figure, key)
-  // @ts-expect-error TODO: Migrating to v2
-  const themeChanged = setChartTheme(bokehTheme, renderData.theme as Theme)
-
-  // NOTE: Each script run forces Bokeh to provide different ids for their
-  // elements. For that reason, this will always update the chart.
-  // The only exception would be if the same info is sent down from the frontend
-  // only. It shouldn't happen, but it's a safeguard.
-  if (hasChanged || themeChanged) {
-    // await updateChart(chartData, useContainerWidth)
-  }
-
-  // The UI may change dimensions so we should ensure the iframe is the proper height
-  // Streamlit.setFrameHeight()
 }
 
 const loadFonts = async ({
