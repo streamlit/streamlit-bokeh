@@ -41,9 +41,6 @@ interface Dimensions {
   height: number
 }
 
-// The div with id "stBokehChart" will always exist because html file contains it
-// const chart = document.getElementById("stBokehChart") as HTMLDivElement
-
 // These values come from Bokeh's default values
 // See https://github.com/bokeh/bokeh/blob/3.6.2/bokehjs/src/lib/models/plots/plot.ts#L203
 const DEFAULT_WIDTH = 400 // px
@@ -170,7 +167,7 @@ async function updateChart(
 
   if (chart !== null) {
     removeAllChildNodes(chart)
-    await window.Bokeh.embed.embed_item(data, `stBokehChart_${key}`)
+    await window.Bokeh.embed.embed_item(data, key)
   }
 }
 
@@ -244,10 +241,10 @@ const loadCss = async ({
 }
 
 const getOrCreateChart = (container: HTMLDivElement, key: string) => {
-  const chart = container.querySelector<HTMLDivElement>(`#stBokehChart_${key}`)
+  const chart = document.getElementById(key) as HTMLDivElement | null
   if (!chart) {
     const newChart = document.createElement("div")
-    newChart.id = `stBokehChart_${key}`
+    newChart.id = key
     container.appendChild(newChart)
     return newChart
   }
@@ -266,12 +263,11 @@ export default async function (
   console.debug("Streamlit Bokeh component rendered by Streamlit", component, {
     hasInitialized,
   })
-  const { parentElement } = component
+  const { parentElement, stKey: key } = component
   const {
     figure,
     bokeh_theme: bokehTheme,
     use_container_width: useContainerWidth,
-    key,
   } = component.data
 
   if (!hasInitialized[key]) {

@@ -109,7 +109,6 @@ def streamlit_bokeh(
             "figure": json.dumps(json_item(figure)),
             "bokeh_theme": theme,
             "use_container_width": use_container_width,
-            "key": key,
         },
         isolate_styles=False,
     )
