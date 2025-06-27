@@ -110,7 +110,8 @@ const setChartTheme = setChartThemeGenerator()
 
 export function getChartDimensions(
   plot: any,
-  useContainerWidth: boolean
+  useContainerWidth: boolean,
+  parentElement: HTMLElement
 ): Dimensions {
   const originalWidth: number = plot.attributes.width ?? DEFAULT_WIDTH
   const originalHeight: number = plot.attributes.height ?? DEFAULT_HEIGHT
@@ -121,7 +122,7 @@ export function getChartDimensions(
   if (useContainerWidth) {
     // Use the width without a scrollbar to ensure the width always
     // looks good.
-    width = document.documentElement.clientWidth
+    width = parentElement.clientWidth
     height = (width / originalWidth) * originalHeight
   }
 
@@ -137,7 +138,9 @@ function removeAllChildNodes(element: Node): void {
 async function updateChart(
   data: any,
   useContainerWidth: boolean = false,
-  chart: HTMLDivElement
+  chart: HTMLDivElement,
+  parentElement: HTMLElement,
+  key: string
 ) {
   /**
    * When you create a bokeh chart in your python script, you can specify
@@ -151,7 +154,11 @@ async function updateChart(
   const plot = data?.doc?.roots?.[0]
 
   if (plot) {
-    const { width, height } = getChartDimensions(plot, useContainerWidth)
+    const { width, height } = getChartDimensions(
+      plot,
+      useContainerWidth,
+      parentElement
+    )
 
     if (width > 0) {
       plot.attributes.width = width
@@ -163,7 +170,7 @@ async function updateChart(
 
   if (chart !== null) {
     removeAllChildNodes(chart)
-    await window.Bokeh.embed.embed_item(data, "stBokehChart")
+    await window.Bokeh.embed.embed_item(data, `stBokehChart_${key}`)
   }
 }
 
@@ -171,6 +178,7 @@ interface ComponentData {
   figure: string
   use_container_width: boolean
   bokeh_theme: string
+  key: string
 }
 
 /**
@@ -272,6 +280,14 @@ export default async function (
 ) {
   console.log("Streamlit Bokeh component rendered by Streamlit", component)
   const { parentElement } = component
+  const {
+    figure,
+    bokeh_theme: bokehTheme,
+    use_container_width: useContainerWidth,
+    key,
+  } = component.data
+
+  debugger
 
   await Promise.all([
     loadBokeh({ parentElement }),
@@ -279,13 +295,15 @@ export default async function (
     loadCss({ parentElement }),
   ])
 
-  const chart = parentElement.querySelector<HTMLDivElement>("#stBokehChart")
+  const container =
+    parentElement.querySelector<HTMLDivElement>(".stBokehContainer")
+  const chart = parentElement.querySelector<HTMLDivElement>(
+    `#stBokehChart_${key}`
+  )
 
-  if (!chart) {
+  if (!chart || !container) {
     throw new Error("Chart not found")
   }
-
-  const { figure, bokeh_theme: bokehTheme } = component.data
 
   const { data: chartData, hasChanged } = getChartData(figure)
   // TODO: Support theming.
@@ -297,7 +315,7 @@ export default async function (
   // The only exception would be if the same info is sent down from the frontend
   // only. It shouldn't happen, but it's a safeguard.
   if (hasChanged || themeChanged) {
-    await updateChart(chartData, false, chart)
+    await updateChart(chartData, useContainerWidth, chart, container, key)
   }
 
   return () => {}
