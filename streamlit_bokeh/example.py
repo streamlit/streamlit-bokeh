@@ -91,7 +91,7 @@ def streamlit_bokeh(
     out = st.components.v2.component(
         "streamlit_bokeh",
         js=Path(__file__).parent / "frontend/build/index.mjs",
-        html=f"""<div class="stBokehContainer"><div id="stBokehChart_{key}"></div></div>""",
+        html="""<div class="stBokehContainer"></div>""",
         # html=Path(__file__).parent / "frontend/build/index.html",
         key=key,
         data={
