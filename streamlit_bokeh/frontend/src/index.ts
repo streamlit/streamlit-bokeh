@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import { Streamlit, RenderData, Theme } from "streamlit-component-lib"
+// import { Theme } from "streamlit-component-lib"
+import { BidiComponentState, StV2ComponentArgs } from "./ST_TEMP"
 import { streamlitTheme } from "./streamlit-theme"
 
 declare global {
@@ -29,7 +30,7 @@ interface Dimensions {
 }
 
 // The div with id "stBokehChart" will always exist because html file contains it
-const chart = document.getElementById("stBokehChart") as HTMLDivElement
+// const chart = document.getElementById("stBokehChart") as HTMLDivElement
 
 // These values come from Bokeh's default values
 // See https://github.com/bokeh/bokeh/blob/3.6.2/bokehjs/src/lib/models/plots/plot.ts#L203
@@ -61,6 +62,8 @@ export const setChartThemeGenerator = () => {
   let currentTheme: string | null = null
   let appTheme: string | null = null
 
+  // TODO: FIXME:
+  // @ts-expect-error TODO: Migrating to v2
   return (newTheme: string, newAppTheme: Theme) => {
     let themeChanged = false
     const renderedAppTheme = JSON.stringify(newAppTheme)
@@ -119,7 +122,11 @@ function removeAllChildNodes(element: Node): void {
   }
 }
 
-async function updateChart(data: any, useContainerWidth: boolean = false) {
+async function updateChart(
+  data: any,
+  useContainerWidth: boolean = false,
+  chart: HTMLDivElement
+) {
   /**
    * When you create a bokeh chart in your python script, you can specify
    * the width: p = figure(title="simple line example", x_axis_label="x", y_axis_label="y", plot_width=200);
@@ -160,9 +167,10 @@ interface ComponentData {
  * component gets new data from Python.
  */
 async function onRender(event: Event): Promise<void> {
-  const renderData: RenderData<ComponentData> = (
-    event as CustomEvent<RenderData<ComponentData>>
-  ).detail
+  // @ts-expect-error TODO: Migrating to v2
+  const renderData: RenderData<ComponentData> =
+    // @ts-expect-error TODO: Migrating to v2
+    (event as CustomEvent<RenderData<ComponentData>>).detail
   const {
     figure,
     bokeh_theme: bokehTheme,
@@ -170,6 +178,7 @@ async function onRender(event: Event): Promise<void> {
   } = renderData.args
 
   const { data: chartData, hasChanged } = getChartData(figure)
+  // @ts-expect-error TODO: Migrating to v2
   const themeChanged = setChartTheme(bokehTheme, renderData.theme as Theme)
 
   // NOTE: Each script run forces Bokeh to provide different ids for their
@@ -177,20 +186,84 @@ async function onRender(event: Event): Promise<void> {
   // The only exception would be if the same info is sent down from the frontend
   // only. It shouldn't happen, but it's a safeguard.
   if (hasChanged || themeChanged) {
-    await updateChart(chartData, useContainerWidth)
+    // await updateChart(chartData, useContainerWidth)
   }
 
   // The UI may change dimensions so we should ensure the iframe is the proper height
-  Streamlit.setFrameHeight()
+  // Streamlit.setFrameHeight()
 }
 
-// Attach our `onRender` handler to Streamlit's render event.
-Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, onRender)
+const loadBokeh = async ({
+  parentElement,
+}: {
+  parentElement: HTMLElement | ShadowRoot
+}) => {
+  // Load bokeh first and wait for it to exist before loading the rest of the scripts
+  // This is to avoid race conditions since plugins require window.Bokeh to be defined
+  // before they can be loaded.
+  const bokehScript = document.createElement("script")
+  bokehScript.src =
+    "https://cdnjs.cloudflare.com/ajax/libs/bokeh/3.7.3/bokeh.min.js"
+  parentElement.appendChild(bokehScript)
 
-// Tell Streamlit we're ready to start receiving data. We won't get our
-// first RENDER_EVENT until we call this function.
-Streamlit.setComponentReady()
+  // Wait for window.Bokeh to be defined
+  await new Promise(resolve => {
+    // If it is not loaded in 5 seconds, throw an error
+    const timeout = setTimeout(() => {
+      throw new Error("Bokeh not loaded")
+    }, 5000)
 
-// Finally, tell Streamlit to update our initial height. We omit the
-// `height` parameter here to have it default to our scrollHeight.
-Streamlit.setFrameHeight()
+    const interval = setInterval(() => {
+      if (window.Bokeh) {
+        clearInterval(interval)
+        clearTimeout(timeout)
+        resolve(undefined)
+      }
+    }, 100)
+  })
+
+  const bokehScripts = [
+    "https://cdnjs.cloudflare.com/ajax/libs/bokeh/3.7.3/bokeh-widgets.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/bokeh/3.7.3/bokeh-tables.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/bokeh/3.7.3/bokeh-api.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/bokeh/3.7.3/bokeh-gl.min.js",
+  ]
+
+  for (const script of bokehScripts) {
+    const scriptElement = document.createElement("script")
+    scriptElement.src = script
+    parentElement.appendChild(scriptElement)
+  }
+}
+
+export default async function (
+  component: StV2ComponentArgs<{}, ComponentData>
+) {
+  console.log("Streamlit Bokeh component rendered by Streamlit", component)
+  const { parentElement } = component
+
+  await loadBokeh({ parentElement })
+
+  const chart = parentElement.querySelector<HTMLDivElement>("#stBokehChart")
+
+  if (!chart) {
+    throw new Error("Chart not found")
+  }
+
+  const { figure, bokeh_theme: bokehTheme } = component.data
+
+  const { data: chartData, hasChanged } = getChartData(figure)
+  // TODO: Support theming.
+  const themeChanged = false
+  // const themeChanged = setChartTheme(bokehTheme, renderData.theme as Theme)
+
+  // NOTE: Each script run forces Bokeh to provide different ids for their
+  // elements. For that reason, this will always update the chart.
+  // The only exception would be if the same info is sent down from the frontend
+  // only. It shouldn't happen, but it's a safeguard.
+  if (hasChanged || themeChanged) {
+    await updateChart(chartData, false, chart)
+  }
+
+  return () => {}
+}
