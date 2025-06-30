@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// import { Theme } from "streamlit-component-lib"
+import { Theme } from "streamlit-component-lib"
 import { StV2ComponentArgs } from "./ST_TEMP"
 import { streamlitTheme } from "./streamlit-theme"
 
@@ -23,6 +23,7 @@ import bokehWidgets from "./assets/bokeh/bokeh-widgets-3.7.3.min.js?url"
 import bokehTables from "./assets/bokeh/bokeh-tables-3.7.3.min.js?url"
 import bokehApi from "./assets/bokeh/bokeh-api-3.7.3.min.js?url"
 import bokehGl from "./assets/bokeh/bokeh-gl-3.7.3.min.js?url"
+import bokehMathjax from "./assets/bokeh/bokeh-mathjax-3.7.3.min.js?url"
 
 import SourceSansProRegular from "./assets/fonts/SourceSansPro-Regular.woff2?url"
 import SourceSansProSemiBold from "./assets/fonts/SourceSansPro-SemiBold.woff2?url"
@@ -71,8 +72,6 @@ export const setChartThemeGenerator = () => {
   let currentTheme: string | null = null
   let appTheme: string | null = null
 
-  // TODO: FIXME:
-  // @ts-expect-error TODO: Migrating to v2
   return (newTheme: string, newAppTheme: Theme) => {
     let themeChanged = false
     const renderedAppTheme = JSON.stringify(newAppTheme)
@@ -220,7 +219,13 @@ const loadBokeh = async ({
     }, 100)
   })
 
-  const bokehScripts = [bokehWidgets, bokehTables, bokehApi, bokehGl]
+  const bokehScripts = [
+    bokehWidgets,
+    bokehTables,
+    bokehApi,
+    bokehGl,
+    bokehMathjax,
+  ]
 
   for (const script of bokehScripts) {
     const scriptElement = document.createElement("script")
@@ -260,9 +265,6 @@ const hasInitialized: Record<string, boolean> = {}
 export default async function (
   component: StV2ComponentArgs<{}, ComponentData>
 ) {
-  console.debug("Streamlit Bokeh component rendered by Streamlit", component, {
-    hasInitialized,
-  })
   const { parentElement, stKey: key } = component
   const {
     figure,
@@ -292,10 +294,23 @@ export default async function (
     throw new Error("Chart not found")
   }
 
+  const getCssPropertyValue = (property: string) => {
+    const style = getComputedStyle(container)
+    return style.getPropertyValue(property)
+  }
+
   const { data: chartData, hasChanged } = getChartData(figure, key)
-  // TODO: Support theming.
-  const themeChanged = false
-  // const themeChanged = setChartTheme(bokehTheme, renderData.theme as Theme)
+  const themeChanged = setChartTheme(bokehTheme, {
+    backgroundColor: getCssPropertyValue("--st-colors-bg-color"),
+    primaryColor: getCssPropertyValue("--st-colors-primary"),
+    secondaryBackgroundColor: getCssPropertyValue("--st-colors-secondary-bg"),
+    textColor: getCssPropertyValue("--st-colors-heading-color"),
+    // These are unused properties, but we need to provide them to satisfy the type
+    base: "",
+    font: "",
+  })
+  // const themeChanged = false
+  console.log({ hasChanged, themeChanged })
 
   // NOTE: Each script run forces Bokeh to provide different ids for their
   // elements. For that reason, this will always update the chart.

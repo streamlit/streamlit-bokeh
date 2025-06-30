@@ -12,7 +12,7 @@
   },
   "scripts": {
     "start": "vite",
-    "dev": "vite build --watch",
+    "dev": "DEV=1 vite build --watch",
     "format": "prettier --write src/**/*.ts",
     "test": "vitest --run",
     "test:dev": "vitest",
