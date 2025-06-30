@@ -26,6 +26,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
 
   const port = env.VITE_PORT ? parseInt(env.VITE_PORT) : 3001
+  const dev = process.env.DEV ? true : false
 
   return {
     base: "./",
@@ -34,6 +35,7 @@ export default defineConfig(({ mode }) => {
       port,
     },
     build: {
+      minify: !dev,
       outDir: "build",
       lib: {
         entry: "./src/index.ts",

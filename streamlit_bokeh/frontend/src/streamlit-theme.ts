@@ -24,7 +24,7 @@ type AttrValue = string | number
 // Bokeh does not export their Theme Class, so we
 // simulate close to the class provided by Bokeh
 // The relevant class is located here:
-// https://github.com/bokeh/bokeh/blob/3.6.2/bokehjs/src/lib/api/themes.ts#L17
+// https://github.com/bokeh/bokeh/blob/3.7.3/bokehjs/src/lib/api/themes.ts#L17
 class BokehTheme {
   readonly attrs: Record<BokehObjectType, Record<AttrName, AttrValue>>
 
@@ -35,11 +35,13 @@ class BokehTheme {
   get(obj: any, attr: string): unknown | undefined {
     // Identify the type of the Bokeh object. It will be
     // an instance of a class that Bokeh provides through
-    // their API, so we just iterate over all theclasses
+    // their API, so we just iterate over all the classes
     // to identify the type of the object.
     let type = null
     Object.keys(this.attrs).forEach(key => {
-      if (obj instanceof window.Bokeh[key]) {
+      // Bokeh models are accessible through window.Bokeh.Models
+      const BokehModel = window.Bokeh.Models?.[key]
+      if (BokehModel && obj instanceof BokehModel) {
         type = key
       }
     })
