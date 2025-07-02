@@ -16,7 +16,9 @@
     "format": "prettier --write src/**/*.ts",
     "test": "vitest --run",
     "test:dev": "vitest",
-    "build": "tsc && vite build"
+    "typecheck": "tsc --noEmit",
+    "build": "yarn clean && yarn typecheck && vite build --mode production",
+    "clean": "rm -rf build"
   },
   "eslintConfig": {
     "extends": "react-app"
