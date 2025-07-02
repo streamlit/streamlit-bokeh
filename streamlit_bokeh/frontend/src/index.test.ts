@@ -24,7 +24,10 @@ import {
 } from "./index"
 
 describe("getChartDataGenerator", () => {
-  let getChartData: (figure: string) => {
+  let getChartData: (
+    figure: string,
+    key: string
+  ) => {
     data: object | null
     hasChanged: boolean
   }
@@ -35,23 +38,23 @@ describe("getChartDataGenerator", () => {
 
   test("should return parsed data and hasChanged true on first call", () => {
     const figure = JSON.stringify({ key: "value" })
-    const result = getChartData(figure)
+    const result = getChartData(figure, "test")
 
     expect(result).toEqual({ data: { key: "value" }, hasChanged: true })
   })
 
   test("should return hasChanged false for the same figure", () => {
     const figure = JSON.stringify({ key: "value" })
-    getChartData(figure)
-    const result = getChartData(figure)
+    getChartData(figure, "test")
+    const result = getChartData(figure, "test")
 
     expect(result).toEqual({ data: { key: "value" }, hasChanged: false })
   })
 
   test("should return hasChanged true for a different figure", () => {
-    getChartData(JSON.stringify({ key: "value" }))
+    getChartData(JSON.stringify({ key: "value" }), "test")
     const newFigure = JSON.stringify({ key: "newValue" })
-    const result = getChartData(newFigure)
+    const result = getChartData(newFigure, "test")
 
     expect(result).toEqual({ data: { key: "newValue" }, hasChanged: true })
   })
@@ -109,13 +112,13 @@ describe("setChartThemeGenerator", () => {
 describe("getChartDimensions", () => {
   test("should return default dimensions when no width/height attributes are provided", () => {
     const plot = { attributes: {} }
-    const result = getChartDimensions(plot, false)
+    const result = getChartDimensions(plot, false, document.documentElement)
     expect(result).toEqual({ width: 400, height: 350 })
   })
 
   test("should return provided dimensions when width/height attributes are set", () => {
     const plot = { attributes: { width: 800, height: 400 } }
-    const result = getChartDimensions(plot, false)
+    const result = getChartDimensions(plot, false, document.documentElement)
     expect(result).toEqual({ width: 800, height: 400 })
   })
 
@@ -127,7 +130,7 @@ describe("getChartDimensions", () => {
     })
 
     const plot = { attributes: { width: 800, height: 400 } }
-    const result = getChartDimensions(plot, true)
+    const result = getChartDimensions(plot, true, document.documentElement)
     expect(result.width).toBe(1200)
     expect(result.height).toBeCloseTo(600)
   })

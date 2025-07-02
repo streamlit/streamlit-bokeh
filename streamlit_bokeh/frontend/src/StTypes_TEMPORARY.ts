@@ -24,7 +24,11 @@ export type BidiComponentState = Record<string, unknown>
 
 export type ArrowData = Uint8Array<ArrayBufferLike> | null
 
-// TODO: Expose this so that component authors can use it.
+/**
+ * TODO: This is a temporary type that will be replaced with the actual type
+ * from the streamlit-component-lib package.
+ * @see https://www.npmjs.com/package/streamlit-component-lib
+ */
 export type StV2ComponentArgs<
   ComponentState extends BidiComponentState = BidiComponentState,
   /**
