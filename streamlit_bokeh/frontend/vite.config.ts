@@ -26,6 +26,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
 
   const port = env.VITE_PORT ? parseInt(env.VITE_PORT) : 3001
+  // TODO: Put this into env and read it in Python rather than needing to read
+  // it from process.env
   const dev = process.env.DEV ? true : false
 
   return {
@@ -38,7 +40,6 @@ export default defineConfig(({ mode }) => {
       minify: dev ? false : "esbuild",
       outDir: "build",
       sourcemap: dev,
-      cssCodeSplit: true,
       lib: {
         entry: "./src/index.ts",
         name: "MyComponent",
@@ -53,7 +54,6 @@ export default defineConfig(({ mode }) => {
           minifyWhitespace: true,
         },
       }),
-      rollupOptions: {},
     },
   } satisfies UserConfig
 })
