@@ -35,19 +35,25 @@ export default defineConfig(({ mode }) => {
       port,
     },
     build: {
-      minify: !dev,
+      minify: dev ? false : "esbuild",
       outDir: "build",
+      sourcemap: dev,
+      cssCodeSplit: true,
       lib: {
         entry: "./src/index.ts",
         name: "MyComponent",
         formats: ["es"],
         fileName: "index",
       },
-      rollupOptions: {
-        output: {
-          manualChunks: undefined,
+      ...(!dev && {
+        esbuild: {
+          drop: ["console", "debugger"],
+          minifyIdentifiers: true,
+          minifySyntax: true,
+          minifyWhitespace: true,
         },
-      },
+      }),
+      rollupOptions: {},
     },
   } satisfies UserConfig
 })
