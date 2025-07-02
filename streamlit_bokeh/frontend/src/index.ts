@@ -15,7 +15,7 @@
  */
 
 import { Theme } from "streamlit-component-lib"
-import { StV2ComponentArgs } from "./ST_TEMP"
+import { StV2ComponentArgs } from "./StTypes_TEMPORARY"
 import { streamlitTheme } from "./streamlit-theme"
 
 import bokehMin from "./assets/bokeh/bokeh-3.7.3.min.js?url"
@@ -309,8 +309,6 @@ export default async function (
     base: "",
     font: "",
   })
-  // const themeChanged = false
-  console.log({ hasChanged, themeChanged })
 
   // NOTE: Each script run forces Bokeh to provide different ids for their
   // elements. For that reason, this will always update the chart.

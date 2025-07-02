@@ -41,12 +41,12 @@ if not _RELEASE:
         html="""<div class="stBokehContainer"></div>""",
     )
 else:
-    # TODO: Production
-    parent_dir = os.path.dirname(os.path.abspath(__file__))
-    build_dir = os.path.join(parent_dir, "frontend/build")
+    # TODO: Right now this and the above are the same. In the future we will
+    # likely have a different path for production to support hashed files.
     _component_func = st.components.v2.component(
         component_name,
-        path=build_dir,
+        js=Path(__file__).parent / "frontend/build/index.mjs",
+        html="""<div class="stBokehContainer"></div>""",
     )
 
 
