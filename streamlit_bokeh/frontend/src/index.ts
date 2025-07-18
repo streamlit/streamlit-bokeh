@@ -273,12 +273,12 @@ export default async function (
   } = component.data
 
   if (!hasInitialized[key]) {
-    hasInitialized[key] = true
     await Promise.all([
       loadBokeh({ parentElement }),
       loadFonts({ parentElement }),
       loadCss({ parentElement }),
     ])
+    hasInitialized[key] = true
   }
 
   const container =

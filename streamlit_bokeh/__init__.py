@@ -34,11 +34,13 @@ _RELEASE = not _DEV
 
 component_name = "streamlit_bokeh"
 
+HTML = """<div class="stBokehContainer"></div>"""
+
 if not _RELEASE:
     _component_func = st.components.v2.component(
         component_name,
         js=Path(__file__).parent / "frontend/build/index.mjs",
-        html="""<div class="stBokehContainer"></div>""",
+        html=HTML,
     )
 else:
     # TODO: Right now this and the above are the same. In the future we will
@@ -46,7 +48,7 @@ else:
     _component_func = st.components.v2.component(
         component_name,
         js=Path(__file__).parent / "frontend/build/index.mjs",
-        html="""<div class="stBokehContainer"></div>""",
+        html=HTML,
     )
 
 
