@@ -68,5 +68,5 @@ version = "3.7.2"
 
 [[tool.streamlit.component.components]]
 name = "streamlit_bokeh"
-js = "frontend/build/index.mjs"
+js = "frontend/build/index-*.mjs"
 html = "<div class='stBokehContainer'></div>"

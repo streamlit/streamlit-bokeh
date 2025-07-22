@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => {
         entry: "./src/index.ts",
         name: "MyComponent",
         formats: ["es"],
-        fileName: "index",
+        fileName: "index-[hash]",
       },
       ...(!dev && {
         esbuild: {
