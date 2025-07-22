@@ -1,1 +1,2 @@
 recursive-include streamlit_bokeh/frontend/build *
+include streamlit_bokeh/pyproject.toml

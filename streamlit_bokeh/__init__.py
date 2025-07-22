@@ -15,7 +15,6 @@
 import importlib.metadata
 import json
 import os
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import bokeh
@@ -32,24 +31,8 @@ if TYPE_CHECKING:
 _DEV = os.environ.get("DEV", False)
 _RELEASE = not _DEV
 
-component_name = "streamlit_bokeh"
 
-HTML = """<div class="stBokehContainer"></div>"""
-
-if not _RELEASE:
-    _component_func = st.components.v2.component(
-        component_name,
-        js=Path(__file__).parent / "frontend/build/index.mjs",
-        html=HTML,
-    )
-else:
-    # TODO: Right now this and the above are the same. In the future we will
-    # likely have a different path for production to support hashed files.
-    _component_func = st.components.v2.component(
-        component_name,
-        js=Path(__file__).parent / "frontend/build/index.mjs",
-        html=HTML,
-    )
+_component_func = st.components.v2.component("streamlit_bokeh.streamlit_bokeh")
 
 
 __version__ = importlib.metadata.version("streamlit_bokeh")

@@ -61,3 +61,12 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 # This will automatically find all packages (equivalent to setuptools.find_packages())
+
+[tool.streamlit.component]
+name = "streamlit_bokeh"
+version = "3.7.2"
+
+[[tool.streamlit.component.components]]
+name = "streamlit_bokeh"
+js = "frontend/build/index.mjs"
+html = "<div class='stBokehContainer'></div>"
