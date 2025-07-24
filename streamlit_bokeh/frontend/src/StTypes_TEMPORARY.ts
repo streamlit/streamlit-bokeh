@@ -40,6 +40,7 @@ export type StV2ComponentArgs<
   DataShape = unknown,
 > = {
   data: DataShape
+  key: string
   name: string
   parentElement: HTMLElement | ShadowRoot
   setStateValue: (
@@ -50,7 +51,6 @@ export type StV2ComponentArgs<
     name: keyof ComponentState,
     value: ComponentState[keyof ComponentState]
   ) => void
-  stKey: string
 }
 
 export type ComponentResult = {

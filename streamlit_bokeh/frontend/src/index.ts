@@ -265,8 +265,7 @@ const hasInitialized: Record<string, boolean> = {}
 export default async function (
   component: StV2ComponentArgs<{}, ComponentData>
 ) {
-  // console.log("component", component)
-  const { parentElement, stKey: key } = component
+  const { parentElement, key } = component
   const {
     figure,
     bokeh_theme: bokehTheme,
