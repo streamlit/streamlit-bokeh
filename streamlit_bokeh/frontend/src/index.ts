@@ -14,21 +14,25 @@
  * limitations under the License.
  */
 
-import { Theme } from "streamlit-component-lib"
-import { StV2ComponentArgs } from "./StTypes_TEMPORARY"
 import { streamlitTheme } from "./streamlit-theme"
 
 import bokehMin from "./assets/bokeh/bokeh-3.7.3.min.js?url"
-import bokehWidgets from "./assets/bokeh/bokeh-widgets-3.7.3.min.js?url"
-import bokehTables from "./assets/bokeh/bokeh-tables-3.7.3.min.js?url"
 import bokehApi from "./assets/bokeh/bokeh-api-3.7.3.min.js?url"
 import bokehGl from "./assets/bokeh/bokeh-gl-3.7.3.min.js?url"
 import bokehMathjax from "./assets/bokeh/bokeh-mathjax-3.7.3.min.js?url"
+import bokehTables from "./assets/bokeh/bokeh-tables-3.7.3.min.js?url"
+import bokehWidgets from "./assets/bokeh/bokeh-widgets-3.7.3.min.js?url"
 
+import SourceSansProBold from "./assets/fonts/SourceSansPro-Bold.woff2?url"
 import SourceSansProRegular from "./assets/fonts/SourceSansPro-Regular.woff2?url"
 import SourceSansProSemiBold from "./assets/fonts/SourceSansPro-SemiBold.woff2?url"
-import SourceSansProBold from "./assets/fonts/SourceSansPro-Bold.woff2?url"
 
+import {
+  Component,
+  ComponentArgs,
+  StreamlitTheme,
+  StreamlitThemeCssProperties,
+} from "@streamlit/component-v2-lib"
 import indexCss from "./assets/index.css?url"
 
 declare global {
@@ -66,13 +70,12 @@ export const getChartDataGenerator = () => {
     return { data: savedChartData[key], hasChanged: false }
   }
 }
-const getChartData = getChartDataGenerator()
 
 export const setChartThemeGenerator = () => {
   let currentTheme: string | null = null
   let appTheme: string | null = null
 
-  return (newTheme: string, newAppTheme: Theme) => {
+  return (newTheme: string, newAppTheme: StreamlitTheme) => {
     let themeChanged = false
     const renderedAppTheme = JSON.stringify(newAppTheme)
 
@@ -102,7 +105,6 @@ export const setChartThemeGenerator = () => {
     return themeChanged
   }
 }
-const setChartTheme = setChartThemeGenerator()
 
 export function getChartDimensions(
   plot: any,
@@ -262,9 +264,23 @@ const getOrCreateChart = (container: HTMLDivElement, key: string) => {
  */
 const hasInitialized: Record<string, boolean> = {}
 
-export default async function (
-  component: StV2ComponentArgs<{}, ComponentData>
-) {
+/**
+ * Component-specific theme setters to avoid state leakage between instances
+ */
+const componentThemeSetters: Record<
+  string,
+  ReturnType<typeof setChartThemeGenerator>
+> = {}
+
+/**
+ * Component-specific chart data getters to avoid state leakage between instances
+ */
+const componentChartDataGetters: Record<
+  string,
+  ReturnType<typeof getChartDataGenerator>
+> = {}
+
+const bokehComponent: Component<{}, ComponentData> = async component => {
   const { parentElement, key } = component
   const {
     figure,
@@ -281,6 +297,20 @@ export default async function (
     hasInitialized[key] = true
   }
 
+  // Create a component-specific theme setter to avoid state leakage between
+  // instances
+  if (!componentThemeSetters[key]) {
+    componentThemeSetters[key] = setChartThemeGenerator()
+  }
+  const setChartTheme = componentThemeSetters[key]
+
+  // Create a component-specific chart data getter to avoid state leakage
+  // between instances
+  if (!componentChartDataGetters[key]) {
+    componentChartDataGetters[key] = getChartDataGenerator()
+  }
+  const getChartData = componentChartDataGetters[key]
+
   const container =
     parentElement.querySelector<HTMLDivElement>(".stBokehContainer")
 
@@ -294,20 +324,21 @@ export default async function (
     throw new Error("Chart not found")
   }
 
-  const getCssPropertyValue = (property: string) => {
+  const getCssPropertyValue = (property: keyof StreamlitThemeCssProperties) => {
     const style = getComputedStyle(container)
     return style.getPropertyValue(property)
   }
 
   const { data: chartData, hasChanged } = getChartData(figure, key)
   const themeChanged = setChartTheme(bokehTheme, {
-    backgroundColor: getCssPropertyValue("--st-colors-bg-color"),
-    primaryColor: getCssPropertyValue("--st-colors-primary"),
-    secondaryBackgroundColor: getCssPropertyValue("--st-colors-secondary-bg"),
-    textColor: getCssPropertyValue("--st-colors-heading-color"),
-    // These are unused properties, but we need to provide them to satisfy the type
-    base: "",
-    font: "",
+    backgroundColor: getCssPropertyValue("--st-background-color"),
+    primaryColor: getCssPropertyValue("--st-primary-color"),
+    secondaryBackgroundColor: getCssPropertyValue(
+      "--st-secondary-background-color"
+    ),
+    textColor: getCssPropertyValue("--st-text-color"),
+    base: getCssPropertyValue("--st-base"),
+    font: getCssPropertyValue("--st-font"),
   })
 
   // NOTE: Each script run forces Bokeh to provide different ids for their
@@ -317,6 +348,6 @@ export default async function (
   if (hasChanged || themeChanged) {
     await updateChart(chartData, useContainerWidth, chart, container, key)
   }
-
-  return () => {}
 }
+
+export default bokehComponent
