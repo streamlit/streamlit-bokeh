@@ -507,6 +507,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@streamlit/component-v2-lib@file:./streamlit-component-v2-lib-0.1.0.tgz::locator=streamlit_bokeh%40workspace%3A.":
+  version: 0.1.0
+  resolution: "@streamlit/component-v2-lib@file:./streamlit-component-v2-lib-0.1.0.tgz#./streamlit-component-v2-lib-0.1.0.tgz::hash=a30113&locator=streamlit_bokeh%40workspace%3A."
+  checksum: 10c0/7b5deb3f409bbcbf0c19fabc0869a5500f1a0ca27bc24c9a316de6c7b6f4e2b445e4967e82bfff7e96feddc3d57175336464820e1baaa1da208e1a360120bd31
+  languageName: node
+  linkType: hard
+
 "@swc/core-darwin-arm64@npm:1.12.7":
   version: 1.12.7
   resolution: "@swc/core-darwin-arm64@npm:1.12.7"
@@ -2857,6 +2864,7 @@ __metadata:
   resolution: "streamlit_bokeh@workspace:."
   dependencies:
     "@bokeh/bokehjs": "npm:^3.7.3"
+    "@streamlit/component-v2-lib": ./streamlit-component-v2-lib-0.1.0.tgz
     "@types/jest": "npm:^24.0.0"
     "@types/lodash": "npm:^4.14.150"
     "@types/node": "npm:^22.14.1"
