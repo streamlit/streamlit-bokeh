@@ -14,7 +14,6 @@
 
 import importlib.metadata
 import json
-import os
 from typing import TYPE_CHECKING
 
 import bokeh
@@ -23,13 +22,6 @@ from bokeh.embed import json_item
 
 if TYPE_CHECKING:
     from bokeh.plotting.figure import Figure
-
-# Create a _RELEASE constant. We'll set this to False while we're developing
-# the component, and True when we're ready to package and distribute it.
-# (This is, of course, optional - there are innumerable ways to manage your
-# release process.)
-_DEV = os.environ.get("DEV", False)
-_RELEASE = not _DEV
 
 
 _component_func = st.components.v2.component("streamlit_bokeh.streamlit_bokeh")
