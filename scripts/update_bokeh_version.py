@@ -17,8 +17,9 @@ import re
 import requests
 import semver
 import subprocess
+import toml
 
-SETUP_PY_PATH = "setup.py"
+PYPROJECT_TOML_PATH = "pyproject.toml"
 
 
 def get_latest_bokeh_version():
@@ -31,29 +32,31 @@ def get_latest_bokeh_version():
 
 
 def get_component_version():
-    with open(SETUP_PY_PATH, "r") as f:
-        setup_content = f.read()
+    with open(PYPROJECT_TOML_PATH, "r") as f:
+        pyproject_data = toml.load(f)
 
-    # Extract version from setup.py
-    match = re.search(r"version\s*=\s*['\"]([\d\.]+)(['\"])", setup_content)
+    # Extract version from pyproject.toml
+    version = pyproject_data.get("project", {}).get("version")
 
-    if match:
-        return match.group(1)
+    if version:
+        return version
     else:
-        raise ValueError("Bokeh version not found in the file")
+        raise ValueError("Component version not found in pyproject.toml")
 
 
 def get_dependency_bokeh_version():
-    with open(SETUP_PY_PATH, "r") as f:
-        setup_content = f.read()
+    with open(PYPROJECT_TOML_PATH, "r") as f:
+        pyproject_data = toml.load(f)
 
-    # Extract Bokeh version from dependency line (e.g., bokeh==2.4.3)
-    match = re.search(r"bokeh\s*==\s*([\d\.]+)", setup_content)
+    # Extract Bokeh version from dependencies list
+    dependencies = pyproject_data.get("project", {}).get("dependencies", [])
 
-    if match:
-        return match.group(1)
-    else:
-        raise ValueError("Bokeh version not found in the file")
+    for dep in dependencies:
+        match = re.search(r"bokeh\s*==\s*([\d\.]+)", dep)
+        if match:
+            return match.group(1)
+
+    raise ValueError("Bokeh version not found in dependencies")
 
 
 def download_files(new_version, destination):
@@ -77,28 +80,35 @@ def download_files(new_version, destination):
                 f.write(chunk)
 
 
-def update_setup_py(new_version, old_bokeh_version, new_bokeh_version):
-    with open(SETUP_PY_PATH, "r") as f:
-        setup_content = f.read()
+def update_pyproject_toml(new_version, old_bokeh_version, new_bokeh_version):
+    with open(PYPROJECT_TOML_PATH, "r") as f:
+        pyproject_data = toml.load(f)
 
-    # Replace package version in `version='...'`
-    # This pattern is naive; adapt as needed for your file structure.
-    setup_content = re.sub(
-        r"(version\s*=\s*['\"])([\d\.]+)(['\"])",
-        rf"\g<1>{new_version}\g<3>",
-        setup_content,
-    )
+    # Update project version
+    pyproject_data["project"]["version"] = new_version
 
-    # Replace bokeh==old_version with bokeh==new_version
-    if old_bokeh_version:
-        setup_content = re.sub(
-            rf"(bokeh\s*==\s*){old_bokeh_version}",
-            rf"\g<1>{new_bokeh_version}",
-            setup_content,
-        )
+    # Update streamlit component version if it exists
+    if (
+        "tool" in pyproject_data
+        and "streamlit" in pyproject_data["tool"]
+        and "component" in pyproject_data["tool"]["streamlit"]
+    ):
+        pyproject_data["tool"]["streamlit"]["component"]["version"] = new_version
 
-    with open(SETUP_PY_PATH, "w") as f:
-        f.write(setup_content)
+    # Update bokeh dependency version
+    if (
+        old_bokeh_version
+        and "project" in pyproject_data
+        and "dependencies" in pyproject_data["project"]
+    ):
+        dependencies = pyproject_data["project"]["dependencies"]
+        for i, dep in enumerate(dependencies):
+            if dep.startswith("bokeh=="):
+                dependencies[i] = f"bokeh=={new_bokeh_version}"
+                break
+
+    with open(PYPROJECT_TOML_PATH, "w") as f:
+        toml.dump(pyproject_data, f)
 
 
 def update_test_requirements(
@@ -255,8 +265,8 @@ if __name__ == "__main__":
     update_index_html(public_dir, old_bokeh_version, new_bokeh_version)
     update_init_py(old_bokeh_version, new_bokeh_version)
 
-    # Update the bokeh dependency version and component version in setup.py and test-requirements.txt
-    update_setup_py(new_version, old_bokeh_version, new_bokeh_version)
+    # Update the bokeh dependency version and component version in pyproject.toml and test-requirements.txt
+    update_pyproject_toml(new_version, old_bokeh_version, new_bokeh_version)
     update_test_requirements(
         old_bokeh_version, new_bokeh_version, old_version, new_version
     )
