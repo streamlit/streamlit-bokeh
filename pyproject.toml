@@ -37,7 +37,10 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering :: Visualization",
 ]
-dependencies = ["streamlit>=1.26", "bokeh==3.7.3"]
+dependencies = [
+  "streamlit @ https://core-previews.s3-us-west-2.amazonaws.com/pr-11354/streamlit-1.47.1-py3-none-any.whl",
+  "bokeh==3.7.3",
+]
 
 [project.optional-dependencies]
 devel = [
@@ -60,7 +63,9 @@ Twitter = "https://twitter.com/streamlit"
 include-package-data = true
 
 [tool.setuptools.packages.find]
-# This will automatically find all packages (equivalent to setuptools.find_packages())
+where = ["."]
+include = ["streamlit_bokeh*"]
+exclude = ["e2e_playwright*", "scripts*", "build*", "dist*", "venv*", ".*"]
 
 [tool.streamlit.component]
 name = "streamlit_bokeh"
