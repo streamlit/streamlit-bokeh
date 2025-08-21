@@ -16,24 +16,23 @@
 
 import { streamlitTheme } from "./streamlit-theme"
 
-import bokehMin from "./assets/bokeh/bokeh-3.7.3.min.js?url"
-import bokehApi from "./assets/bokeh/bokeh-api-3.7.3.min.js?url"
-import bokehGl from "./assets/bokeh/bokeh-gl-3.7.3.min.js?url"
-import bokehMathjax from "./assets/bokeh/bokeh-mathjax-3.7.3.min.js?url"
-import bokehTables from "./assets/bokeh/bokeh-tables-3.7.3.min.js?url"
-import bokehWidgets from "./assets/bokeh/bokeh-widgets-3.7.3.min.js?url"
+import bokehMin from "./assets/bokeh/bokeh-3.7.3.min.js?url&no-inline"
+import bokehApi from "./assets/bokeh/bokeh-api-3.7.3.min.js?url&no-inline"
+import bokehGl from "./assets/bokeh/bokeh-gl-3.7.3.min.js?url&no-inline"
+import bokehMathjax from "./assets/bokeh/bokeh-mathjax-3.7.3.min.js?url&no-inline"
+import bokehTables from "./assets/bokeh/bokeh-tables-3.7.3.min.js?url&no-inline"
+import bokehWidgets from "./assets/bokeh/bokeh-widgets-3.7.3.min.js?url&no-inline"
 
-import SourceSansProBold from "./assets/fonts/SourceSansPro-Bold.woff2?url"
-import SourceSansProRegular from "./assets/fonts/SourceSansPro-Regular.woff2?url"
-import SourceSansProSemiBold from "./assets/fonts/SourceSansPro-SemiBold.woff2?url"
+import SourceSansProBold from "./assets/fonts/SourceSansPro-Bold.woff2?url&no-inline"
+import SourceSansProRegular from "./assets/fonts/SourceSansPro-Regular.woff2?url&no-inline"
+import SourceSansProSemiBold from "./assets/fonts/SourceSansPro-SemiBold.woff2?url&no-inline"
 
 import {
   Component,
-  ComponentArgs,
   StreamlitTheme,
   StreamlitThemeCssProperties,
 } from "@streamlit/component-v2-lib"
-import indexCss from "./assets/index.css?url"
+import indexCss from "./assets/index.css?url&no-inline"
 
 declare global {
   interface Window {
