@@ -3,7 +3,7 @@ name: Playwright E2E Tests
 on:
   push:
     branches:
-      - "main"
+      - 'main'
   pull_request:
     types: [opened, synchronize, reopened]
   # Allows workflow to be called from other workflows
@@ -32,12 +32,12 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
           persist-credentials: false
-          submodules: "recursive"
+          submodules: 'recursive'
           fetch-depth: 2
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: '3.12'
       - name: Enable and Prepare Latest Yarn
         run: |
           corepack enable
@@ -46,9 +46,9 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
-          cache: "yarn"
-          cache-dependency-path: "**/yarn.lock"
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+          cache-dependency-path: '**/yarn.lock'
       - name: Make frontend
         run: |
           cd streamlit_bokeh/frontend
@@ -68,7 +68,7 @@ jobs:
         run: |
           md5sum $(which python) > $GITHUB_WORKSPACE/python_cache_key.md5
           md5sum e2e_playwright/test-requirements.txt >> $GITHUB_WORKSPACE/python_cache_key.md5
-          md5sum setup.py >> $GITHUB_WORKSPACE/python_cache_key.md5
+          md5sum pyproject.toml >> $GITHUB_WORKSPACE/python_cache_key.md5
           date +%F >> $GITHUB_WORKSPACE/python_cache_key.md5
         shell: bash
       - name: Restore virtualenv from cache
@@ -81,8 +81,8 @@ jobs:
         run: |
           python -m venv venv
           source venv/bin/activate
-          pip install setuptools
-          python setup.py sdist bdist_wheel
+          pip install build
+          python -m build
       - name: Install Python test dependencies
         run: |
           source venv/bin/activate
