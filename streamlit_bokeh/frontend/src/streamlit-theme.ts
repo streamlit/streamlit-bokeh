@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Theme } from "streamlit-component-lib"
+import { StreamlitTheme } from "@streamlit/component-v2-lib"
 import { transparentize } from "color2k"
 
 type BokehObjectType = string
@@ -56,7 +56,7 @@ class BokehTheme {
   }
 }
 
-export function streamlitTheme(theme: Theme): BokehTheme {
+export function streamlitTheme(theme: StreamlitTheme): BokehTheme {
   const { backgroundColor, secondaryBackgroundColor, textColor } = theme
   const fadedText10 = transparentize(textColor, 0.8)
 

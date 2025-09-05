@@ -336,9 +336,9 @@ const bokehComponent: Component<{}, ComponentData> = async component => {
       "--st-secondary-background-color"
     ),
     textColor: getCssPropertyValue("--st-text-color"),
-    base: getCssPropertyValue("--st-base"),
     font: getCssPropertyValue("--st-font"),
-  })
+    // Only select the necessary properties
+  } as StreamlitTheme)
 
   // NOTE: Each script run forces Bokeh to provide different ids for their
   // elements. For that reason, this will always update the chart.

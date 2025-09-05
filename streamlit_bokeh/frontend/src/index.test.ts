@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { Theme } from "streamlit-component-lib"
 import { describe, test, expect, beforeEach } from "vitest"
 
 import {
@@ -22,6 +21,7 @@ import {
   setChartThemeGenerator,
   getChartDimensions,
 } from "./index"
+import { StreamlitTheme } from "@streamlit/component-v2-lib"
 
 describe("getChartDataGenerator", () => {
   let getChartData: (
@@ -62,7 +62,7 @@ describe("getChartDataGenerator", () => {
 
 // Unit tests for setChartThemeGenerator
 describe("setChartThemeGenerator", () => {
-  let setChartTheme: (newTheme: string, newAppTheme: Theme) => boolean
+  let setChartTheme: (newTheme: string, newAppTheme: StreamlitTheme) => boolean
 
   beforeEach(() => {
     setChartTheme = setChartThemeGenerator()
@@ -74,7 +74,7 @@ describe("setChartThemeGenerator", () => {
       textColor: "white",
       backgroundColor: "black",
       secondaryBackgroundColor: "gray",
-    } as Theme
+    } as StreamlitTheme
     const result = setChartTheme(newTheme, newAppTheme)
     const { use_theme: useTheme } =
       global.window.Bokeh.require("core/properties")
@@ -89,7 +89,7 @@ describe("setChartThemeGenerator", () => {
       textColor: "white",
       backgroundColor: "black",
       secondaryBackgroundColor: "gray",
-    } as Theme
+    } as StreamlitTheme
     setChartTheme(newTheme, newAppTheme)
     const result = setChartTheme(newTheme, newAppTheme)
 
@@ -102,7 +102,7 @@ describe("setChartThemeGenerator", () => {
       textColor: "white",
       backgroundColor: "black",
       secondaryBackgroundColor: "gray",
-    } as Theme
+    } as StreamlitTheme
     const result = setChartTheme(newTheme, newAppTheme)
 
     expect(result).toBe(true)

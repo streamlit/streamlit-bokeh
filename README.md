@@ -28,6 +28,80 @@ pip install streamlit bokeh
 
 ---
 
+## 🛠️ Development
+
+### Prerequisites
+
+- **Python** 3.9–3.13
+- **Node.js** 22.x.y (see `.nvmrc`)
+- **uv** (fast Python package manager)
+
+### 1) Create and activate a virtual environment
+
+```bash
+uv venv .venv
+source .venv/bin/activate
+```
+
+### 2) Install Python dependencies from `pyproject.toml`
+
+```bash
+# Minimal runtime install (editable)
+uv pip install -e .
+
+# Recommended for development (includes tests/tools)
+uv pip install -e ".[devel]"
+```
+
+### 3) Install and build the frontend
+
+```bash
+cd streamlit_bokeh/frontend
+corepack enable
+yarn install
+yarn build          # one-time build to produce frontend/build assets
+# Optional: watch mode during development
+yarn dev
+```
+
+### 4) Run a local demo
+
+```bash
+streamlit run ./e2e_playwright/bokeh_chart_basics.py
+```
+
+### 5) Run tests
+
+Python end-to-end tests (Playwright):
+
+```bash
+# Extra test deps
+uv pip install -r e2e_playwright/test-requirements.txt
+# Install browsers (first time only)
+python -m playwright install --with-deps
+# Build the package if needed
+uv build
+# Run tests
+pytest e2e_playwright -n auto
+```
+
+Frontend tests and type checks:
+
+```bash
+cd streamlit_bokeh/frontend
+yarn test
+yarn typecheck
+```
+
+### 6) Build the Python package (optional)
+
+```bash
+uv build
+ls dist/
+```
+
+---
+
 ## 💡 Usage
 
 Here's how to integrate a simple Bokeh line plot into your Streamlit app:

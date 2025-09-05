@@ -8,8 +8,7 @@
     "@streamlit/component-v2-lib": "./streamlit-component-v2-lib-0.1.0.tgz",
     "color2k": "^2.0.3",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "streamlit-component-lib": "^2.0.0"
+    "react-dom": "^18.3.1"
   },
   "scripts": {
     "start": "vite",
