@@ -37,10 +37,7 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering :: Visualization",
 ]
-dependencies = [
-  "streamlit @ https://core-previews.s3-us-west-2.amazonaws.com/pr-11354/streamlit-1.47.1-py3-none-any.whl",
-  "bokeh==3.7.3",
-]
+dependencies = ["streamlit==1.50.0", "bokeh==3.7.3"]
 
 [project.optional-dependencies]
 devel = [
@@ -67,11 +64,13 @@ where = ["."]
 include = ["streamlit_bokeh*"]
 exclude = ["e2e_playwright*", "scripts*", "build*", "dist*", "venv*", ".*"]
 
-[tool.streamlit.component]
-name = "streamlit_bokeh"
-version = "3.7.2"
+
+[tool.streamlit.component.content_security_policy]
+connect-src = ["'self'", "https://api.example.com"]
 
 [[tool.streamlit.component.components]]
 name = "streamlit_bokeh"
-js = "frontend/build/index-*.mjs"
-html = "<div class='stBokehContainer'></div>"
+asset_dir = "frontend/build"
+
+[tool.uv.sources]
+streamlit = { path = "./streamlit-1.50.0-py3-none-any.whl" }

@@ -24,7 +24,11 @@ if TYPE_CHECKING:
     from bokeh.plotting.figure import Figure
 
 
-_component_func = st.components.v2.component("streamlit_bokeh.streamlit_bokeh")
+_component_func = st.components.v2.component(
+    "streamlit-bokeh.streamlit_bokeh",
+    js="index-*.mjs",
+    html="<div class='stBokehContainer'></div>",
+)
 
 
 __version__ = importlib.metadata.version("streamlit_bokeh")
