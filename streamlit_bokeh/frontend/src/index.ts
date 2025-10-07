@@ -15,7 +15,6 @@
  */
 
 import { streamlitTheme } from "./streamlit-theme"
-
 import bokehMin from "./assets/bokeh/bokeh-3.7.3.min.js?url&no-inline"
 import bokehApi from "./assets/bokeh/bokeh-api-3.7.3.min.js?url&no-inline"
 import bokehGl from "./assets/bokeh/bokeh-gl-3.7.3.min.js?url&no-inline"
@@ -67,6 +66,16 @@ export const getChartDataGenerator = () => {
     }
 
     return { data: savedChartData[key], hasChanged: false }
+  }
+}
+
+// Note: CSP nonce handling removed per request
+
+function resolveAssetUrl(relativeOrUrl: string): string {
+  try {
+    return new URL(relativeOrUrl, import.meta.url).href
+  } catch (e) {
+    return relativeOrUrl
   }
 }
 
@@ -178,18 +187,24 @@ interface ComponentData {
   key: string
 }
 
-const loadFonts = async ({
-  parentElement,
-}: {
-  parentElement: HTMLElement | ShadowRoot
-}) => {
-  const fonts = [SourceSansProRegular, SourceSansProSemiBold, SourceSansProBold]
-  for (const font of fonts) {
-    const fontElement = document.createElement("link")
-    // fontElement.rel = "preload"
-    fontElement.href = font
-    parentElement.appendChild(fontElement)
-  }
+const loadFonts = async () => {
+  const fontSources = [
+    { url: SourceSansProRegular, weight: "400" },
+    { url: SourceSansProSemiBold, weight: "600" },
+    { url: SourceSansProBold, weight: "700" },
+  ]
+
+  await Promise.all(
+    fontSources.map(async ({ url, weight }) => {
+      const face = new FontFace(
+        "Source Sans Pro",
+        `url(${url}) format('woff2')`,
+        { weight }
+      )
+      const loaded = await face.load()
+      document.fonts.add(loaded)
+    })
+  )
 }
 
 const loadBokeh = async ({
@@ -197,42 +212,73 @@ const loadBokeh = async ({
 }: {
   parentElement: HTMLElement | ShadowRoot
 }) => {
-  // Load bokeh first and wait for it to exist before loading the rest of the scripts
-  // This is to avoid race conditions since plugins require window.Bokeh to be defined
-  // before they can be loaded.
+  const urls = {
+    core: resolveAssetUrl(bokehMin),
+    widgets: resolveAssetUrl(bokehWidgets),
+    tables: resolveAssetUrl(bokehTables),
+    api: resolveAssetUrl(bokehApi),
+    gl: resolveAssetUrl(bokehGl),
+    mathjax: resolveAssetUrl(bokehMathjax),
+  }
+
+  // Load Bokeh core first
   const bokehScript = document.createElement("script")
-  bokehScript.src = bokehMin
+  bokehScript.defer = true
+  bokehScript.crossOrigin = "anonymous"
+  bokehScript.src = urls.core
+  bokehScript.addEventListener("error", ev => {
+    // eslint-disable-next-line no-console
+    console.error(
+      "[streamlit-bokeh] Failed to load Bokeh core script",
+      urls.core,
+      ev
+    )
+  })
   parentElement.appendChild(bokehScript)
 
-  // Wait for window.Bokeh to be defined
-  await new Promise(resolve => {
-    // If it is not loaded in 5 seconds, throw an error
-    const timeout = setTimeout(() => {
-      throw new Error("Bokeh not loaded")
-    }, 5000)
-
-    const interval = setInterval(() => {
-      if (window.Bokeh) {
-        clearInterval(interval)
-        clearTimeout(timeout)
-        resolve(undefined)
-      }
-    }, 100)
+  await new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(
+      () => reject(new Error("Bokeh not loaded")),
+      5000
+    )
+    bokehScript.addEventListener("load", () => {
+      clearTimeout(timeout)
+      resolve()
+    })
+    bokehScript.addEventListener("error", () => {
+      clearTimeout(timeout)
+      reject(new Error("Failed to load Bokeh core script"))
+    })
   })
 
-  const bokehScripts = [
-    bokehWidgets,
-    bokehTables,
-    bokehApi,
-    bokehGl,
-    bokehMathjax,
-  ]
-
-  for (const script of bokehScripts) {
-    const scriptElement = document.createElement("script")
-    scriptElement.src = script
-    parentElement.appendChild(scriptElement)
+  // Ensure window.Bokeh is available before loading plugins
+  if (!window.Bokeh) {
+    throw new Error("Bokeh global not available after core load")
   }
+
+  const pluginUrls = [
+    urls.widgets,
+    urls.tables,
+    urls.api,
+    urls.gl,
+    urls.mathjax,
+  ]
+  await Promise.all(
+    pluginUrls.map(
+      url =>
+        new Promise<void>((resolve, reject) => {
+          const s = document.createElement("script")
+          s.defer = true
+          s.crossOrigin = "anonymous"
+          s.src = url
+          s.addEventListener("load", () => resolve())
+          s.addEventListener("error", () =>
+            reject(new Error(`Failed to load script ${url}`))
+          )
+          parentElement.appendChild(s)
+        })
+    )
+  )
 }
 
 const loadCss = async ({
@@ -240,10 +286,11 @@ const loadCss = async ({
 }: {
   parentElement: HTMLElement | ShadowRoot
 }) => {
-  const cssElement = document.createElement("link")
-  cssElement.rel = "stylesheet"
-  cssElement.href = indexCss
-  parentElement.appendChild(cssElement)
+  const href = resolveAssetUrl(indexCss)
+  const link = document.createElement("link")
+  link.rel = "stylesheet"
+  link.href = href
+  parentElement.appendChild(link)
 }
 
 const getOrCreateChart = (container: HTMLDivElement, key: string) => {
@@ -290,7 +337,7 @@ const bokehComponent: Component<{}, ComponentData> = async component => {
   if (!hasInitialized[key]) {
     await Promise.all([
       loadBokeh({ parentElement }),
-      loadFonts({ parentElement }),
+      loadFonts(),
       loadCss({ parentElement }),
     ])
     hasInitialized[key] = true
