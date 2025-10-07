@@ -64,6 +64,9 @@ where = ["."]
 include = ["streamlit_bokeh*"]
 exclude = ["e2e_playwright*", "scripts*", "build*", "dist*", "venv*", ".*"]
 
+[tool.setuptools.package-data]
+streamlit_bokeh = ["frontend/build/**/*", "pyproject.toml"]
+
 
 [tool.streamlit.component.content_security_policy]
 connect-src = ["'self'", "https://api.example.com"]
