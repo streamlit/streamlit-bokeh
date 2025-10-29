@@ -226,13 +226,9 @@ const bokehComponent = async (component: ComponentArgs<{}, ComponentData>) => {
     state.initialized = true
   }
 
-  // Create a component-specific theme setter to avoid state leakage between
-  // instances
-  const setChartTheme = state.setChartTheme
-
-  // Create a component-specific chart data getter to avoid state leakage
-  // between instances
-  const getChartData = state.getChartData
+  // Component-specific theme getter and setter to avoid state leakage between
+  // instances.
+  const { setChartTheme, getChartData } = state
 
   const container =
     parentElement.querySelector<HTMLDivElement>(".stBokehContainer")
