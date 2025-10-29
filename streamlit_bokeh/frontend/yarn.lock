@@ -25,20 +25,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bokeh/bokehjs@npm:^3.7.3":
-  version: 3.7.3
-  resolution: "@bokeh/bokehjs@npm:3.7.3"
+"@bokeh/bokehjs@npm:^3.8.0":
+  version: 3.8.0
+  resolution: "@bokeh/bokehjs@npm:3.8.0"
   dependencies:
     "@bokeh/numbro": "npm:^1.6.2"
     "@bokeh/slickgrid": "npm:~2.4.4103"
     "@types/geojson": "npm:^7946.0.13"
     "@types/google.maps": "npm:^3.55.5"
+    "@types/nearley": "npm:^2.11.5"
     "@types/proj4": "npm:^2.5.5"
     "@types/sprintf-js": "npm:^1.1.4"
     choices.js: "npm:^10.2.0"
-    flatbush: "npm:^4.2.0"
+    fflate: "npm:^0.8.2"
+    flatbush: "npm:^4.5.0"
     flatpickr: "npm:^4.6.13"
     mathjax-full: "npm:^3.2.2"
+    nearley: "npm:^2.20.1"
     nouislider: "npm:^15.7.1"
     proj4: "npm:^2.11.0"
     regl: "npm:^2.1.0"
@@ -46,7 +49,7 @@ __metadata:
     timezone: "npm:^1.0.23"
     tslib: "npm:^2.8.1"
     underscore.template: "npm:^0.1.7"
-  checksum: 10c0/c7f2d21b831b3c51ffe8d355884e168c83e2bfb91311900b3dfa2792d8939f9fe08dc14ed498f499ddbffed3aa7d6112cdc9457f372250e815c3acf0dcd1c54c
+  checksum: 10c0/92c8a48fcc3ac8cba95ccabb6e003b4bf0bd83c9171fab87801182df747f01a990cbd38f12c5c3fedc601e28233e4bf79970abc22fb515fea205b4fb3578d7f1
   languageName: node
   linkType: hard
 
@@ -595,6 +598,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/nearley@npm:^2.11.5":
+  version: 2.11.5
+  resolution: "@types/nearley@npm:2.11.5"
+  checksum: 10c0/f9144e7426681bc53a0958e2dbfbe4d85b69fab1ba9908edf22fb2949fd5844cd3816e341c23eb6fc5596a51706d25b7c99079fd2d0b41701aeec98dfe33303f
+  languageName: node
+  linkType: hard
+
 "@types/node@npm:^22.14.1":
   version: 22.15.33
   resolution: "@types/node@npm:22.15.33"
@@ -945,6 +955,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"commander@npm:^2.19.0":
+  version: 2.20.3
+  resolution: "commander@npm:2.20.3"
+  checksum: 10c0/74c781a5248c2402a0a3e966a0a2bba3c054aad144f5c023364be83265e796b20565aa9feff624132ff629aa64e16999fa40a743c10c12f7c61e96a794b99288
+  languageName: node
+  linkType: hard
+
 "cross-spawn@npm:^7.0.0":
   version: 7.0.6
   resolution: "cross-spawn@npm:7.0.6"
@@ -1025,6 +1042,13 @@ __metadata:
   version: 24.9.0
   resolution: "diff-sequences@npm:24.9.0"
   checksum: 10c0/c7c6cec09502e8266fa499e5b1f359349529b4019135b6a6ae4441a7f48bd518b286d33255376a47e9e970c78527355d0ca3f58d01d6513f6b565283d56600b9
+  languageName: node
+  linkType: hard
+
+"discontinuous-range@npm:1.0.0":
+  version: 1.0.0
+  resolution: "discontinuous-range@npm:1.0.0"
+  checksum: 10c0/487b105f83c1cc528e25e65d3c4b73958ec79769b7bd0e264414702a23a7e2b282c72982b4bef4af29fcab53f47816c3f0a5c40d85a99a490f4bc35b83dc00f8
   languageName: node
   linkType: hard
 
@@ -1221,12 +1245,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"flatbush@npm:^4.2.0":
-  version: 4.4.0
-  resolution: "flatbush@npm:4.4.0"
+"fflate@npm:^0.8.2":
+  version: 0.8.2
+  resolution: "fflate@npm:0.8.2"
+  checksum: 10c0/03448d630c0a583abea594835a9fdb2aaf7d67787055a761515bf4ed862913cfd693b4c4ffd5c3f3b355a70cf1e19033e9ae5aedcca103188aaff91b8bd6e293
+  languageName: node
+  linkType: hard
+
+"flatbush@npm:^4.5.0":
+  version: 4.5.0
+  resolution: "flatbush@npm:4.5.0"
   dependencies:
-    flatqueue: "npm:^2.0.3"
-  checksum: 10c0/3412f207c92c26e6ed197f666240ec20aa893ed66ffcde44cf97250d289d0c0190cfe30c44338bd5b77d31b55cd7772827fd32c065ddae0acce7a04fad8c8ab5
+    flatqueue: "npm:^3.0.0"
+  checksum: 10c0/e57afbff669a808f98db56e552c8428dd39c3134e4e48a5338f08680773a9c3d90872d6c5523920918ca149248baa22cb68f4a6acae3cf1a26a8a3866f82de04
   languageName: node
   linkType: hard
 
@@ -1237,10 +1268,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"flatqueue@npm:^2.0.3":
-  version: 2.0.3
-  resolution: "flatqueue@npm:2.0.3"
-  checksum: 10c0/6ecc53d81b171d60c17dd775f44731e04d4ab4ed4496d5e2b883bdf2fd08d0853d57f1f26d4e33bc41d991a3beed74d18e4eec5d98a82fec30d1918900f1631f
+"flatqueue@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "flatqueue@npm:3.0.0"
+  checksum: 10c0/585f4f2c6c3d080b9ef32318258984c5602fb94990886e53c8cf1272ed3629efd64157b1f06b9f0c584b3dc79da547279246027c282ac07e3199ec490dc7c91d
   languageName: node
   linkType: hard
 
@@ -1674,6 +1705,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"moo@npm:^0.5.0":
+  version: 0.5.2
+  resolution: "moo@npm:0.5.2"
+  checksum: 10c0/a9d9ad8198a51fe35d297f6e9fdd718298ca0b39a412e868a0ebd92286379ab4533cfc1f1f34516177f5129988ab25fe598f78e77c84e3bfe0d4a877b56525a8
+  languageName: node
+  linkType: hard
+
 "ms@npm:^2.1.3":
   version: 2.1.3
   resolution: "ms@npm:2.1.3"
@@ -1687,6 +1725,23 @@ __metadata:
   bin:
     nanoid: bin/nanoid.cjs
   checksum: 10c0/40e7f70b3d15f725ca072dfc4f74e81fcf1fbb02e491cf58ac0c79093adc9b0a73b152bcde57df4b79cd097e13023d7504acb38404a4da7bc1cd8e887b82fe0b
+  languageName: node
+  linkType: hard
+
+"nearley@npm:^2.20.1":
+  version: 2.20.1
+  resolution: "nearley@npm:2.20.1"
+  dependencies:
+    commander: "npm:^2.19.0"
+    moo: "npm:^0.5.0"
+    railroad-diagrams: "npm:^1.0.0"
+    randexp: "npm:0.4.6"
+  bin:
+    nearley-railroad: bin/nearley-railroad.js
+    nearley-test: bin/nearley-test.js
+    nearley-unparse: bin/nearley-unparse.js
+    nearleyc: bin/nearleyc.js
+  checksum: 10c0/d25e1fd40b19c53a0ada6a688670f4a39063fd9553ab62885e81a82927d51572ce47193b946afa3d85efa608ba2c68f433c421f69b854bfb7f599eacb5fae37e
   languageName: node
   linkType: hard
 
@@ -1876,6 +1931,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"railroad-diagrams@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "railroad-diagrams@npm:1.0.0"
+  checksum: 10c0/81bf8f86870a69fb9ed243102db9ad6416d09c4cb83964490d44717690e07dd982f671503236a1f8af28f4cb79d5d7a87613930f10ac08defa845ceb6764e364
+  languageName: node
+  linkType: hard
+
+"randexp@npm:0.4.6":
+  version: 0.4.6
+  resolution: "randexp@npm:0.4.6"
+  dependencies:
+    discontinuous-range: "npm:1.0.0"
+    ret: "npm:~0.1.10"
+  checksum: 10c0/14ee14b6d7f5ce69609b51cc914fb7a7c82ad337820a141c5f762c5ad1fe868f5191ea6e82359aee019b625ee1359486628fa833909d12c3b5dd9571908c3345
+  languageName: node
+  linkType: hard
+
 "react-is@npm:^16.8.4":
   version: 16.13.1
   resolution: "react-is@npm:16.13.1"
@@ -1896,6 +1968,13 @@ __metadata:
   version: 2.1.1
   resolution: "regl@npm:2.1.1"
   checksum: 10c0/68aa1c6f94cb33da612515b0e69833af67dce422e5b8d891c6d8f4c055aac1afd44e2b94dcfe90bb79fde1c5cd48501db292f5268365140765256ea3518546e1
+  languageName: node
+  linkType: hard
+
+"ret@npm:~0.1.10":
+  version: 0.1.15
+  resolution: "ret@npm:0.1.15"
+  checksum: 10c0/01f77cad0f7ea4f955852c03d66982609893edc1240c0c964b4c9251d0f9fb6705150634060d169939b096d3b77f4c84d6b6098a5b5d340160898c8581f1f63f
   languageName: node
   linkType: hard
 
@@ -2136,7 +2215,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "streamlit_bokeh@workspace:."
   dependencies:
-    "@bokeh/bokehjs": "npm:^3.7.3"
+    "@bokeh/bokehjs": "npm:^3.8.0"
     "@streamlit/component-v2-lib": "npm:^0.1.0"
     "@types/jest": "npm:^24.0.0"
     "@types/lodash": "npm:^4.14.150"

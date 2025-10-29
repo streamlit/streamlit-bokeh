@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import bokehMin from "./assets/bokeh/bokeh-3.7.3.min.js?url&no-inline"
-import bokehApi from "./assets/bokeh/bokeh-api-3.7.3.min.js?url&no-inline"
-import bokehGl from "./assets/bokeh/bokeh-gl-3.7.3.min.js?url&no-inline"
-import bokehMathjax from "./assets/bokeh/bokeh-mathjax-3.7.3.min.js?url&no-inline"
-import bokehTables from "./assets/bokeh/bokeh-tables-3.7.3.min.js?url&no-inline"
-import bokehWidgets from "./assets/bokeh/bokeh-widgets-3.7.3.min.js?url&no-inline"
+import bokehMin from "./assets/bokeh/bokeh-3.8.0.min.js?url&no-inline"
+import bokehApi from "./assets/bokeh/bokeh-api-3.8.0.min.js?url&no-inline"
+import bokehGl from "./assets/bokeh/bokeh-gl-3.8.0.min.js?url&no-inline"
+import bokehMathjax from "./assets/bokeh/bokeh-mathjax-3.8.0.min.js?url&no-inline"
+import bokehTables from "./assets/bokeh/bokeh-tables-3.8.0.min.js?url&no-inline"
+import bokehWidgets from "./assets/bokeh/bokeh-widgets-3.8.0.min.js?url&no-inline"
 
 import SourceSansProBold from "./assets/fonts/SourceSansPro-Bold.woff2?url&no-inline"
 import SourceSansProRegular from "./assets/fonts/SourceSansPro-Regular.woff2?url&no-inline"

@@ -32,7 +32,7 @@ _component_func = st.components.v2.component(
 
 
 __version__ = importlib.metadata.version("streamlit_bokeh")
-REQUIRED_BOKEH_VERSION = "3.7.3"
+REQUIRED_BOKEH_VERSION = "3.8.0"
 
 
 def streamlit_bokeh(

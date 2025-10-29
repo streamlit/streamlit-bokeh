@@ -1,10 +1,10 @@
 {
   "name": "streamlit_bokeh",
   "license": "Apache-2.0",
-  "version": "3.7.2",
+  "version": "3.8.0",
   "private": true,
   "dependencies": {
-    "@bokeh/bokehjs": "^3.7.3",
+    "@bokeh/bokehjs": "^3.8.0",
     "@streamlit/component-v2-lib": "^0.1.0",
     "color2k": "^2.0.3"
   },

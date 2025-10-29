@@ -3,7 +3,7 @@ name: Enforce Pre-Commit Hooks
 on:
   push:
     branches:
-      - "develop"
+      - "main"
   pull_request:
     types: [opened, synchronize, reopened]
   # Allows workflow to be called from other workflows
