@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-import { streamlitTheme } from "./streamlit-theme"
 import bokehMin from "./assets/bokeh/bokeh-3.7.3.min.js?url&no-inline"
 import bokehApi from "./assets/bokeh/bokeh-api-3.7.3.min.js?url&no-inline"
 import bokehGl from "./assets/bokeh/bokeh-gl-3.7.3.min.js?url&no-inline"
 import bokehMathjax from "./assets/bokeh/bokeh-mathjax-3.7.3.min.js?url&no-inline"
 import bokehTables from "./assets/bokeh/bokeh-tables-3.7.3.min.js?url&no-inline"
 import bokehWidgets from "./assets/bokeh/bokeh-widgets-3.7.3.min.js?url&no-inline"
+import { streamlitTheme } from "./streamlit-theme"
 
 import SourceSansProBold from "./assets/fonts/SourceSansPro-Bold.woff2?url&no-inline"
 import SourceSansProRegular from "./assets/fonts/SourceSansPro-Regular.woff2?url&no-inline"
 import SourceSansProSemiBold from "./assets/fonts/SourceSansPro-SemiBold.woff2?url&no-inline"
 
 import {
-  Component,
+  ComponentArgs,
   StreamlitTheme,
   StreamlitThemeCssProperties,
 } from "@streamlit/component-v2-lib"
@@ -68,8 +68,6 @@ export const getChartDataGenerator = () => {
     return { data: savedChartData[key], hasChanged: false }
   }
 }
-
-// Note: CSP nonce handling removed per request
 
 function resolveAssetUrl(relativeOrUrl: string): string {
   try {
@@ -305,28 +303,35 @@ const getOrCreateChart = (container: HTMLDivElement, key: string) => {
 }
 
 /**
- * Module-scoped state to avoid loading the Bokeh scripts multiple times per
- * component.
+ * Component-scoped state keyed by the host element to support multiple
+ * instances.
  */
-const hasInitialized: Record<string, boolean> = {}
+type ComponentState = {
+  initialized: boolean
+  setChartTheme: ReturnType<typeof setChartThemeGenerator>
+  getChartData: ReturnType<typeof getChartDataGenerator>
+}
 
-/**
- * Component-specific theme setters to avoid state leakage between instances
- */
-const componentThemeSetters: Record<
-  string,
-  ReturnType<typeof setChartThemeGenerator>
-> = {}
+const componentState = new WeakMap<HTMLElement | ShadowRoot, ComponentState>()
 
-/**
- * Component-specific chart data getters to avoid state leakage between instances
- */
-const componentChartDataGetters: Record<
-  string,
-  ReturnType<typeof getChartDataGenerator>
-> = {}
+const getOrCreateInstanceState = (
+  host: HTMLElement | ShadowRoot
+): ComponentState => {
+  let state = componentState.get(host)
 
-const bokehComponent: Component<{}, ComponentData> = async component => {
+  if (!state) {
+    state = {
+      initialized: false,
+      setChartTheme: setChartThemeGenerator(),
+      getChartData: getChartDataGenerator(),
+    }
+    componentState.set(host, state)
+  }
+
+  return state
+}
+
+const bokehComponent = async (component: ComponentArgs<{}, ComponentData>) => {
   const { parentElement, key } = component
   const {
     figure,
@@ -334,28 +339,24 @@ const bokehComponent: Component<{}, ComponentData> = async component => {
     use_container_width: useContainerWidth,
   } = component.data
 
-  if (!hasInitialized[key]) {
+  const state = getOrCreateInstanceState(parentElement)
+
+  if (!state.initialized) {
     await Promise.all([
       loadBokeh({ parentElement }),
       loadFonts(),
       loadCss({ parentElement }),
     ])
-    hasInitialized[key] = true
+    state.initialized = true
   }
 
   // Create a component-specific theme setter to avoid state leakage between
   // instances
-  if (!componentThemeSetters[key]) {
-    componentThemeSetters[key] = setChartThemeGenerator()
-  }
-  const setChartTheme = componentThemeSetters[key]
+  const setChartTheme = state.setChartTheme
 
   // Create a component-specific chart data getter to avoid state leakage
   // between instances
-  if (!componentChartDataGetters[key]) {
-    componentChartDataGetters[key] = getChartDataGenerator()
-  }
-  const getChartData = componentChartDataGetters[key]
+  const getChartData = state.getChartData
 
   const container =
     parentElement.querySelector<HTMLDivElement>(".stBokehContainer")
@@ -393,6 +394,11 @@ const bokehComponent: Component<{}, ComponentData> = async component => {
   // only. It shouldn't happen, but it's a safeguard.
   if (hasChanged || themeChanged) {
     await updateChart(chartData, useContainerWidth, chart, container, key)
+  }
+
+  return () => {
+    // Cleanup the instance state
+    componentState.delete(parentElement)
   }
 }
 

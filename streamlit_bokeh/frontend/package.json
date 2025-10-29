@@ -5,7 +5,7 @@
   "private": true,
   "dependencies": {
     "@bokeh/bokehjs": "^3.7.3",
-    "@streamlit/component-v2-lib": "./streamlit-component-v2-lib-0.1.0.tgz",
+    "@streamlit/component-v2-lib": "^0.1.0",
     "color2k": "^2.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

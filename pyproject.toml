@@ -37,7 +37,7 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering :: Visualization",
 ]
-dependencies = ["streamlit==1.50.0", "bokeh==3.7.3"]
+dependencies = ["streamlit==1.51.0", "bokeh==3.7.3"]
 
 [project.optional-dependencies]
 devel = [
@@ -67,13 +67,6 @@ exclude = ["e2e_playwright*", "scripts*", "build*", "dist*", "venv*", ".*"]
 [tool.setuptools.package-data]
 streamlit_bokeh = ["frontend/build/**/*", "pyproject.toml"]
 
-
-[tool.streamlit.component.content_security_policy]
-connect-src = ["'self'", "https://api.example.com"]
-
 [[tool.streamlit.component.components]]
 name = "streamlit_bokeh"
 asset_dir = "frontend/build"
-
-[tool.uv.sources]
-streamlit = { path = "./streamlit-1.50.0-py3-none-any.whl" }

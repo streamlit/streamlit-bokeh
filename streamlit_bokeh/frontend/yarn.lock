@@ -507,10 +507,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@streamlit/component-v2-lib@file:./streamlit-component-v2-lib-0.1.0.tgz::locator=streamlit_bokeh%40workspace%3A.":
+"@streamlit/component-v2-lib@npm:^0.1.0":
   version: 0.1.0
-  resolution: "@streamlit/component-v2-lib@file:./streamlit-component-v2-lib-0.1.0.tgz#./streamlit-component-v2-lib-0.1.0.tgz::hash=3a807f&locator=streamlit_bokeh%40workspace%3A."
-  checksum: 10c0/d0a6faf1b0920c94da7c018e674c18931d5cedfc61593a09d5eefe0c0ebbcc508a7e691bb3423bdfef3136fe1d7296640ddd54359fe75bf6a3d049f290a10c08
+  resolution: "@streamlit/component-v2-lib@npm:0.1.0"
+  checksum: 10c0/908929cdd4e6d419feff086e77bd8b0f147905e3e7cef191cac46cf7058dbdf4cebb2a689e4a61dbbf2c3f9946c03f8c10ebdb439c80043797d0827a11f23b5c
   languageName: node
   linkType: hard
 
@@ -2636,7 +2636,7 @@ __metadata:
   resolution: "streamlit_bokeh@workspace:."
   dependencies:
     "@bokeh/bokehjs": "npm:^3.7.3"
-    "@streamlit/component-v2-lib": ./streamlit-component-v2-lib-0.1.0.tgz
+    "@streamlit/component-v2-lib": "npm:^0.1.0"
     "@types/jest": "npm:^24.0.0"
     "@types/lodash": "npm:^4.14.150"
     "@types/node": "npm:^22.14.1"
