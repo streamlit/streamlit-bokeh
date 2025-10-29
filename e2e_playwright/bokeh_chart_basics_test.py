@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import pytest
-from conftest import ImageCompareFunction, wait_for_app_run
 from chart_types import CHART_TYPES
+from conftest import ImageCompareFunction, wait_for_app_run
 from playwright.sync_api import Page, expect
 
 
@@ -30,13 +30,13 @@ def test_bokeh_chart(
     selection_dropdown.get_by_text(chart).click()
 
     wait_for_app_run(themed_app)
-    iframes = themed_app.locator("iframe")
-    IFRAME_COUNT = 2
-    expect(iframes).to_have_count(IFRAME_COUNT)
+    instances = themed_app.locator("[data-testid=stBidiComponentRegular]")
+    EXPECTED_INSTANCE_COUNT = 2
+    expect(instances).to_have_count(EXPECTED_INSTANCE_COUNT)
 
-    for idx in range(IFRAME_COUNT):
+    for idx in range(EXPECTED_INSTANCE_COUNT):
         label = "use-container-width" if idx == 1 else "standard-width"
-        iframe = iframes.nth(idx)
-        canvas = iframe.content_frame.locator("div.bk-Canvas")
+        instance = instances.nth(idx)
+        canvas = instance.locator("div.bk-Canvas")
         expect(canvas).to_be_visible()
-        assert_snapshot(iframe, name=f"bokeh_chart-{chart}-{label}")
+        assert_snapshot(instance, name=f"bokeh_chart-{chart}-{label}")
