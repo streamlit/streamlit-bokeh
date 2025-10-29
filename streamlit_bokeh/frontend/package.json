@@ -9,27 +9,20 @@
     "color2k": "^2.0.3"
   },
   "scripts": {
-    "start": "vite",
-    "dev": "DEV=1 vite build --watch",
-    "format": "prettier --write src/**/*.ts",
-    "test": "vitest --run",
+    "build": "yarn clean && yarn typecheck && NODE_ENV=production vite build",
+    "clean": "rm -rf build",
+    "dev": "NODE_ENV=development vite build --watch",
+    "format": "prettier --write src/**/*.ts vite.config.ts",
     "test:dev": "vitest",
-    "typecheck": "tsc --noEmit",
-    "build": "yarn clean && yarn typecheck && vite build --mode production",
-    "clean": "rm -rf build"
+    "test": "vitest --run",
+    "typecheck": "tsc --noEmit"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ],
   "homepage": ".",
   "devDependencies": {
     "@types/jest": "^24.0.0",

@@ -17,13 +17,13 @@ Please file [bug reports](https://github.com/streamlit/streamlit/issues/new?temp
 ## 📦 Installation
 
 ```bash
-pip install streamlit-bokeh
+uv pip install streamlit-bokeh
 ```
 
 Ensure you have **Streamlit** and **Bokeh** installed as well:
 
 ```bash
-pip install streamlit bokeh
+uv pip install streamlit bokeh
 ```
 
 ---
@@ -32,8 +32,8 @@ pip install streamlit bokeh
 
 ### Prerequisites
 
-- **Python** 3.9–3.13
-- **Node.js** 22.x.y (see `.nvmrc`)
+- **Python** 3.10–3.13
+- **Node.js** 24.x.y (see `.nvmrc`)
 - **uv** (fast Python package manager)
 
 ### 1) Create and activate a virtual environment
