@@ -66,7 +66,3 @@ exclude = ["e2e_playwright*", "scripts*", "build*", "dist*", "venv*", ".*"]
 
 [tool.setuptools.package-data]
 streamlit_bokeh = ["frontend/build/**/*", "pyproject.toml"]
-
-[[tool.streamlit.component.components]]
-name = "streamlit_bokeh"
-asset_dir = "frontend/build"
