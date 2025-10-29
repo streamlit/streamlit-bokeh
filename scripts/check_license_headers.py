@@ -35,8 +35,6 @@ IGNORE_PATTERN = re.compile(
     r"^\.(github)/"
     # Exclude images.
     r"|\.(?:png|jpg|jpeg|gif|ttf|woff|otf|eot|woff2|ico|svg)$"
-    # Exclude tgz files
-    r"|\.(?:tgz)$"
     # Exclude files, because they make it obvious which product they relate to.
     r"|(LICENSE|NOTICES|CODE_OF_CONDUCT\.md|README\.md)$"
     # Exclude files, because they do not support comments

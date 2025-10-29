@@ -13,40 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import { defineConfig, loadEnv, UserConfig } from "vite"
-import react from "@vitejs/plugin-react-swc"
+import process from "node:process"
+import { defineConfig, UserConfig } from "vite"
 
 /**
- * Vite configuration for Streamlit React Component development
- *
- * @see https://vitejs.dev/config/ for complete Vite configuration options
+ * Vite configuration for Streamlit Custom Component v2 development (no React).
  */
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd())
-
-  const port = env.VITE_PORT ? parseInt(env.VITE_PORT) : 3001
-  // TODO: Put this into env and read it in Python rather than needing to read
-  // it from process.env
-  const dev = process.env.DEV ? true : false
+export default defineConfig(() => {
+  const isProd = process.env.NODE_ENV === "production"
+  const isDev = !isProd
 
   return {
     base: "./",
-    plugins: [react()],
-    server: {
-      port,
+    define: {
+      "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
     },
     build: {
-      minify: dev ? false : "esbuild",
+      minify: isDev ? false : "esbuild",
       outDir: "build",
-      sourcemap: dev,
+      sourcemap: isDev,
       lib: {
         entry: "./src/index.ts",
         name: "MyComponent",
         formats: ["es"],
         fileName: "index-[hash]",
       },
-      ...(!dev && {
+      ...(!isDev && {
         esbuild: {
           drop: ["console", "debugger"],
           minifyIdentifiers: true,
