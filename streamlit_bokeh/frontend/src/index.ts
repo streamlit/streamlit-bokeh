@@ -18,7 +18,6 @@ import { MinimalStreamlitTheme, streamlitTheme } from "./streamlit-theme"
 
 import {
   ComponentArgs,
-  StreamlitTheme,
   StreamlitThemeCssProperties,
 } from "@streamlit/component-v2-lib"
 import { loadBokehGlobally } from "./loaders"
@@ -217,7 +216,7 @@ const getCssPropertyValue = (
   container: HTMLElement
 ) => {
   const style = getComputedStyle(container)
-  return style.getPropertyValue(property)
+  return style.getPropertyValue(property)?.trim()
 }
 
 const bokehComponent = async (component: ComponentArgs<{}, ComponentData>) => {

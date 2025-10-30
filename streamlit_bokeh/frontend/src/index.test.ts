@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import { describe, test, expect, beforeEach } from "vitest"
+import { beforeEach, describe, expect, test } from "vitest"
 
 import {
   getChartDataGenerator,
-  setChartThemeGenerator,
   getChartDimensions,
+  setChartThemeGenerator,
 } from "./index"
-import { StreamlitTheme } from "@streamlit/component-v2-lib"
+import { MinimalStreamlitTheme } from "./streamlit-theme"
 
 describe("getChartDataGenerator", () => {
   let getChartData: (
@@ -62,7 +62,10 @@ describe("getChartDataGenerator", () => {
 
 // Unit tests for setChartThemeGenerator
 describe("setChartThemeGenerator", () => {
-  let setChartTheme: (newTheme: string, newAppTheme: StreamlitTheme) => boolean
+  let setChartTheme: (
+    newTheme: string,
+    newAppTheme: MinimalStreamlitTheme
+  ) => boolean
 
   beforeEach(() => {
     setChartTheme = setChartThemeGenerator()
@@ -70,11 +73,12 @@ describe("setChartThemeGenerator", () => {
 
   test("should apply the theme when theme changes", () => {
     const newTheme = "dark"
-    const newAppTheme = {
+    const newAppTheme: MinimalStreamlitTheme = {
       textColor: "white",
       backgroundColor: "black",
       secondaryBackgroundColor: "gray",
-    } as StreamlitTheme
+      font: "Source Pro",
+    }
     const result = setChartTheme(newTheme, newAppTheme)
     const { use_theme: useTheme } =
       global.window.Bokeh.require("core/properties")
@@ -85,11 +89,12 @@ describe("setChartThemeGenerator", () => {
 
   test("should not reapply the theme if it's the same", () => {
     const newTheme = "dark"
-    const newAppTheme = {
+    const newAppTheme: MinimalStreamlitTheme = {
       textColor: "white",
       backgroundColor: "black",
       secondaryBackgroundColor: "gray",
-    } as StreamlitTheme
+      font: "Source Pro",
+    }
     setChartTheme(newTheme, newAppTheme)
     const result = setChartTheme(newTheme, newAppTheme)
 
@@ -98,11 +103,12 @@ describe("setChartThemeGenerator", () => {
 
   test("should apply Streamlit theme when appropriate", () => {
     const newTheme = "streamlit"
-    const newAppTheme = {
+    const newAppTheme: MinimalStreamlitTheme = {
       textColor: "white",
       backgroundColor: "black",
       secondaryBackgroundColor: "gray",
-    } as StreamlitTheme
+      font: "Source Pro",
+    }
     const result = setChartTheme(newTheme, newAppTheme)
 
     expect(result).toBe(true)

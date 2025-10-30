@@ -72,6 +72,9 @@ def download_files(new_version, destination):
         f"https://raw.githubusercontent.com/bokeh/bokeh/refs/tags/{new_version}/LICENSE.txt",
     ]
 
+    # Ensure destination/bokeh directory exists
+    os.makedirs(os.path.join(destination, "bokeh"), exist_ok=True)
+
     for url in files_to_download:
         filename = os.path.basename(url)
         print(f"Downloading {filename}")
@@ -165,33 +168,33 @@ def update_init_py(old_bokeh_version, new_bokeh_version):
         f.write(init_py_contents)
 
 
-def update_index_html(public_dir, old_version, new_version):
-    index_html_path = os.path.join(public_dir, "index.html")
-    if os.path.exists(index_html_path):
-        with open(index_html_path, "r", encoding="utf-8") as f:
-            html_content = f.read()
+def update_loader_imports(old_bokeh_version, new_bokeh_version):
+    """
+    Update versioned Bokeh asset import paths in the TypeScript loader to the new version.
 
-        # If old_version is known, do a direct replacement
-        if old_version:
-            # Replace each script reference with the new version
-            cdn_suffixes = ["mathjax", "gl", "api", "tables", "widgets", ""]
-            for suffix in cdn_suffixes:
-                old_str = (
-                    f"bokeh-{suffix}-{old_version}.min.js"
-                    if suffix
-                    else f"bokeh-{old_version}.min.js"
-                )
-                new_str = (
-                    f"bokeh-{suffix}-{new_version}.min.js"
-                    if suffix
-                    else f"bokeh-{new_version}.min.js"
-                )
-                html_content = html_content.replace(old_str, new_str)
+    This replaces occurrences like `bokeh-3.8.0.min.js` with `bokeh-<new>.min.js`
+    in `streamlit_bokeh/frontend/src/loaders.ts`.
+    """
+    loader_path = "streamlit_bokeh/frontend/src/loaders.ts"
+    with open(loader_path, "r", encoding="utf-8") as f:
+        contents = f.read()
 
-        with open(index_html_path, "w", encoding="utf-8") as f:
-            f.write(html_content)
-    else:
-        print("No index.html found in frontend/public. Skipping HTML update.")
+    suffixes = ["mathjax", "gl", "api", "tables", "widgets", ""]
+    for suffix in suffixes:
+        old_str = (
+            f"bokeh-{suffix}-{old_bokeh_version}.min.js"
+            if suffix
+            else f"bokeh-{old_bokeh_version}.min.js"
+        )
+        new_str = (
+            f"bokeh-{suffix}-{new_bokeh_version}.min.js"
+            if suffix
+            else f"bokeh-{new_bokeh_version}.min.js"
+        )
+        contents = contents.replace(old_str, new_str)
+
+    with open(loader_path, "w", encoding="utf-8") as f:
+        f.write(contents)
 
 
 def check_remote_branch_exists(remote: str, new_version: str) -> bool:
@@ -247,17 +250,18 @@ if __name__ == "__main__":
         exit(0)
 
     print("New version available!")
-    public_dir = "streamlit_bokeh/frontend/public"
+    assets_dir = "streamlit_bokeh/frontend/src/assets"
 
     # Remove original files
-    bokeh_dir = os.path.join(public_dir, "bokeh")
+    bokeh_dir = os.path.join(assets_dir, "bokeh")
+    os.makedirs(bokeh_dir, exist_ok=True)
     for filename in os.listdir(bokeh_dir):
         if "bokeh" in filename and filename.endswith(".js"):
             os.remove(os.path.join(bokeh_dir, filename))
 
-    download_files(new_bokeh_version, public_dir)
-    # Update the bokeh dependency version in index.html and __init__.py
-    update_index_html(public_dir, old_bokeh_version, new_bokeh_version)
+    download_files(new_bokeh_version, assets_dir)
+    # Update the bokeh dependency version in TS loader and __init__.py
+    update_loader_imports(old_bokeh_version, new_bokeh_version)
     update_init_py(old_bokeh_version, new_bokeh_version)
 
     # Update the bokeh dependency version in pyproject.toml and test-requirements.txt
