@@ -21,12 +21,6 @@ import bokehMathjax from "./assets/bokeh/bokeh-mathjax-3.8.0.min.js?url&no-inlin
 import bokehTables from "./assets/bokeh/bokeh-tables-3.8.0.min.js?url&no-inline"
 import bokehWidgets from "./assets/bokeh/bokeh-widgets-3.8.0.min.js?url&no-inline"
 
-import SourceSansProBold from "./assets/fonts/SourceSansPro-Bold.woff2?url&no-inline"
-import SourceSansProRegular from "./assets/fonts/SourceSansPro-Regular.woff2?url&no-inline"
-import SourceSansProSemiBold from "./assets/fonts/SourceSansPro-SemiBold.woff2?url&no-inline"
-
-import indexCss from "./assets/index.css?url&no-inline"
-
 /**
  * Resolves an asset reference (relative path or absolute URL) to an absolute
  * URL string.
@@ -49,41 +43,6 @@ function resolveAssetUrl(relativeOrUrl: string): string {
   } catch (e) {
     return relativeOrUrl
   }
-}
-
-/**
- * Loads and registers the Source Sans Pro font variants via the FontFace API.
- *
- * What:
- * - Constructs `FontFace` objects for the Regular (400), SemiBold (600), and
- *   Bold (700) weights and adds them to `document.fonts` once loaded.
- *
- * Why:
- * - Ensures consistent typography for Bokeh-rendered visuals without relying on
- *   a global stylesheet, which may not penetrate Shadow DOM boundaries.
- * - Avoids layout shift/FOIT by explicitly preloading and registering the fonts
- *   before use.
- *
- * @returns A promise that resolves when all fonts are loaded and registered.
- */
-export const loadFonts = async () => {
-  const fontSources = [
-    { url: SourceSansProRegular, weight: "400" },
-    { url: SourceSansProSemiBold, weight: "600" },
-    { url: SourceSansProBold, weight: "700" },
-  ]
-
-  await Promise.all(
-    fontSources.map(async ({ url, weight }) => {
-      const face = new FontFace(
-        "Source Sans Pro",
-        `url(${url}) format('woff2')`,
-        { weight }
-      )
-      const loaded = await face.load()
-      document.fonts.add(loaded)
-    })
-  )
 }
 
 /**
@@ -180,34 +139,4 @@ export const loadBokeh = async ({
         })
     )
   )
-}
-
-/**
- * Injects the component stylesheet into the provided container via a `<link>`
- * tag.
- *
- * What:
- * - Resolves the emitted CSS asset URL and appends a `rel="stylesheet"` link
- *   element to the given parent.
- *
- * Why:
- * - Using a `<link>` keeps CSS cacheable by the browser and avoids inlining
- *   large styles into JavaScript bundles.
- * - Passing an explicit `parentElement` supports usage inside Shadow DOM so
- *   styles are applied where the component actually renders.
- *
- * @param options.parentElement - The container (HTMLElement or ShadowRoot)
- * where the link is appended.
- * @returns A promise that resolves once the link is appended.
- */
-export const loadCss = async ({
-  parentElement,
-}: {
-  parentElement: HTMLElement | ShadowRoot
-}) => {
-  const href = resolveAssetUrl(indexCss)
-  const link = document.createElement("link")
-  link.rel = "stylesheet"
-  link.href = href
-  parentElement.appendChild(link)
 }

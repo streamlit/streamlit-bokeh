@@ -21,7 +21,7 @@ import {
   StreamlitTheme,
   StreamlitThemeCssProperties,
 } from "@streamlit/component-v2-lib"
-import { loadBokeh, loadCss, loadFonts } from "./loaders"
+import { loadBokeh } from "./loaders"
 
 declare global {
   interface Window {
@@ -167,14 +167,19 @@ interface ComponentData {
   key: string
 }
 
-const getOrCreateChart = (container: HTMLDivElement, key: string) => {
-  const chart = document.getElementById(key) as HTMLDivElement | null
+const getOrCreateChart = (
+  container: HTMLDivElement,
+  key: string
+): HTMLDivElement => {
+  const chart = container.querySelector<HTMLDivElement>(`#${key}`)
+
   if (!chart) {
     const newChart = document.createElement("div")
     newChart.id = key
     container.appendChild(newChart)
     return newChart
   }
+
   return chart
 }
 
@@ -218,11 +223,7 @@ const bokehComponent = async (component: ComponentArgs<{}, ComponentData>) => {
   const state = getOrCreateInstanceState(parentElement)
 
   if (!state.initialized) {
-    await Promise.all([
-      loadBokeh({ parentElement }),
-      loadFonts(),
-      loadCss({ parentElement }),
-    ])
+    await Promise.all([loadBokeh({ parentElement })])
     state.initialized = true
   }
 
