@@ -45,33 +45,135 @@ function resolveAssetUrl(relativeOrUrl: string): string {
   }
 }
 
+// Global, module-scoped caches to ensure scripts are only appended once
+const scriptLoadPromises = new Map<string, Promise<void>>()
+let bokehLoadPromise: Promise<void> | null = null
+
 /**
- * Programmatically loads the Bokeh runtime and its optional plugins into a
- * container.
+ * Finds an existing <script> element by exact `src` in the document.
  *
- * What:
- * - Resolves URLs for Bokeh core and plugins via the bundler.
- * - Injects a deferred `<script>` for the core library and waits for it to load
- *   with a fail-fast timeout.
- * - After the core exposes `window.Bokeh`, concurrently loads plugin scripts
- *   (widgets, tables, API, GL, MathJax).
+ * Searches both <head> and <body> to be resilient to external injections.
  *
- * Why:
- * - Loading core first guarantees the global `window.Bokeh` exists before
- *   plugins run, which mirrors how Bokeh expects to be initialized.
- * - Parallel plugin loading reduces total startup time once core is available.
- *
- * @param options.parentElement - The container (HTMLElement or ShadowRoot)
- * where scripts are appended.
- * @returns A promise that resolves when all scripts have loaded successfully.
- * @throws If the core script fails to load or `window.Bokeh` is not available
- * in time.
+ * @param src - Absolute URL string to match against the `src` attribute.
+ * @returns The matching HTMLScriptElement or null if not found.
  */
-export const loadBokeh = async ({
-  parentElement,
-}: {
-  parentElement: HTMLElement | ShadowRoot
-}) => {
+function findScriptBySrc(src: string): HTMLScriptElement | null {
+  return (document.head.querySelector(`script[src="${src}"]`) ||
+    document.body.querySelector(
+      `script[src="${src}"]`
+    )) as HTMLScriptElement | null
+}
+
+/**
+ * Loads a script exactly once (idempotent) and resolves when it finishes.
+ *
+ * Behavior:
+ * - If a matching script is already present and marked as loaded, resolves immediately.
+ * - If present but not marked loaded, attaches load/error listeners and waits.
+ * - If not present, appends a new async script to <head> and waits.
+ * - Caches the in-flight Promise by `src` to coalesce concurrent calls.
+ *
+ * @param src - Absolute URL to the script.
+ * @param timeoutMs - Max time to wait before rejecting (default: 10s).
+ * @returns Promise that resolves when the script loads, rejects on failure/timeout.
+ */
+function loadScriptOnce(src: string, timeoutMs = 10000): Promise<void> {
+  const cached = scriptLoadPromises.get(src)
+  if (cached) return cached
+
+  const existing = findScriptBySrc(src)
+  if (existing && (existing as any).dataset?.loaded === "true") {
+    const resolved = Promise.resolve()
+    scriptLoadPromises.set(src, resolved)
+    return resolved
+  }
+
+  const promise = new Promise<void>((resolve, reject) => {
+    const el = existing ?? document.createElement("script")
+    if (!existing) {
+      el.src = src
+      el.async = true
+      el.crossOrigin = "anonymous"
+      document.head.appendChild(el)
+    }
+
+    let done = false
+    const onLoad = () => {
+      if (done) return
+      done = true
+      el.setAttribute("data-loaded", "true")
+      cleanup()
+      resolve()
+    }
+    const onError = () => {
+      if (done) return
+      done = true
+      cleanup()
+      reject(new Error(`Failed to load script ${src}`))
+    }
+    const cleanup = () => {
+      el.removeEventListener("load", onLoad)
+      el.removeEventListener("error", onError)
+      clearTimeout(timeout)
+    }
+
+    el.addEventListener("load", onLoad)
+    el.addEventListener("error", onError)
+    const timeout = setTimeout(() => onError(), timeoutMs)
+
+    // If we didn't create it and it's already loaded, resolve on next tick
+    if (existing && (existing as any).readyState === "complete") {
+      setTimeout(onLoad, 0)
+    }
+  })
+
+  scriptLoadPromises.set(src, promise)
+  return promise
+}
+
+async function ensureBokehCoreLoaded(coreUrl: string, timeoutMs = 10000) {
+  if (window.Bokeh) return
+  if (bokehLoadPromise) return bokehLoadPromise
+
+  bokehLoadPromise = (async () => {
+    await loadScriptOnce(coreUrl, timeoutMs)
+    // Double-check Bokeh global; if not present, poll briefly
+    if (!window.Bokeh) {
+      await new Promise<void>((resolve, reject) => {
+        const started = Date.now()
+        const tick = () => {
+          if (window.Bokeh) return resolve()
+          if (Date.now() - started > timeoutMs)
+            return reject(
+              new Error("Bokeh global not available after core load")
+            )
+          setTimeout(tick, 50)
+        }
+        tick()
+      })
+    }
+  })()
+
+  return bokehLoadPromise
+}
+
+/**
+ * Loads the Bokeh core runtime and plugins into the global document once.
+ *
+ * What it does:
+ * - Resolves asset URLs emitted by the bundler for core and plugins.
+ * - Ensures the core script is present and that `window.Bokeh` is available.
+ * - Loads plugins (Widgets, Tables, API, GL, MathJax) concurrently.
+ *
+ * Guarantees:
+ * - Idempotent across the entire page: repeated calls share a singleton promise
+ *   and no duplicate <script> tags are appended.
+ * - Safe for concurrent calls from multiple component instances.
+ *
+ * @returns Promise that resolves when core and all plugins are ready.
+ * @throws If the core or any plugin fails to load within the timeout.
+ */
+export const loadBokehGlobally = async () => {
   const urls = {
     core: resolveAssetUrl(bokehMin),
     widgets: resolveAssetUrl(bokehWidgets),
@@ -81,41 +183,10 @@ export const loadBokeh = async ({
     mathjax: resolveAssetUrl(bokehMathjax),
   }
 
-  // Load Bokeh core first
-  const bokehScript = document.createElement("script")
-  bokehScript.defer = true
-  bokehScript.crossOrigin = "anonymous"
-  bokehScript.src = urls.core
-  bokehScript.addEventListener("error", ev => {
-    // eslint-disable-next-line no-console
-    console.error(
-      "[streamlit-bokeh] Failed to load Bokeh core script",
-      urls.core,
-      ev
-    )
-  })
-  parentElement.appendChild(bokehScript)
+  // Load Bokeh core (global, idempotent)
+  await ensureBokehCoreLoaded(urls.core, 10000)
 
-  await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(
-      () => reject(new Error("Bokeh not loaded")),
-      5000
-    )
-    bokehScript.addEventListener("load", () => {
-      clearTimeout(timeout)
-      resolve()
-    })
-    bokehScript.addEventListener("error", () => {
-      clearTimeout(timeout)
-      reject(new Error("Failed to load Bokeh core script"))
-    })
-  })
-
-  // Ensure window.Bokeh is available before loading plugins
-  if (!window.Bokeh) {
-    throw new Error("Bokeh global not available after core load")
-  }
-
+  // Load plugins concurrently (global, idempotent)
   const pluginUrls = [
     urls.widgets,
     urls.tables,
@@ -123,20 +194,5 @@ export const loadBokeh = async ({
     urls.gl,
     urls.mathjax,
   ]
-  await Promise.all(
-    pluginUrls.map(
-      url =>
-        new Promise<void>((resolve, reject) => {
-          const s = document.createElement("script")
-          s.defer = true
-          s.crossOrigin = "anonymous"
-          s.src = url
-          s.addEventListener("load", () => resolve())
-          s.addEventListener("error", () =>
-            reject(new Error(`Failed to load script ${url}`))
-          )
-          parentElement.appendChild(s)
-        })
-    )
-  )
+  await Promise.all(pluginUrls.map(url => loadScriptOnce(url, 10000)))
 }

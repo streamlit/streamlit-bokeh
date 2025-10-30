@@ -21,7 +21,7 @@ import {
   StreamlitTheme,
   StreamlitThemeCssProperties,
 } from "@streamlit/component-v2-lib"
-import { loadBokeh } from "./loaders"
+import { loadBokehGlobally } from "./loaders"
 
 declare global {
   interface Window {
@@ -231,7 +231,7 @@ const bokehComponent = async (component: ComponentArgs<{}, ComponentData>) => {
   const state = getOrCreateInstanceState(parentElement)
 
   if (!state.initialized) {
-    await loadBokeh({ parentElement })
+    await loadBokehGlobally()
     state.initialized = true
   }
 
