@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { streamlitTheme } from "./streamlit-theme"
+import { MinimalStreamlitTheme, streamlitTheme } from "./streamlit-theme"
 
 import {
   ComponentArgs,
@@ -63,7 +63,7 @@ export const setChartThemeGenerator = () => {
   let currentTheme: string | null = null
   let appTheme: string | null = null
 
-  return (newTheme: string, newAppTheme: StreamlitTheme) => {
+  return (newTheme: string, newAppTheme: MinimalStreamlitTheme) => {
     let themeChanged = false
     const renderedAppTheme = JSON.stringify(newAppTheme)
 
@@ -223,7 +223,7 @@ const bokehComponent = async (component: ComponentArgs<{}, ComponentData>) => {
   const state = getOrCreateInstanceState(parentElement)
 
   if (!state.initialized) {
-    await Promise.all([loadBokeh({ parentElement })])
+    await loadBokeh({ parentElement })
     state.initialized = true
   }
 
@@ -252,14 +252,12 @@ const bokehComponent = async (component: ComponentArgs<{}, ComponentData>) => {
   const { data: chartData, hasChanged } = getChartData(figure, key)
   const themeChanged = setChartTheme(bokehTheme, {
     backgroundColor: getCssPropertyValue("--st-background-color"),
-    primaryColor: getCssPropertyValue("--st-primary-color"),
     secondaryBackgroundColor: getCssPropertyValue(
       "--st-secondary-background-color"
     ),
     textColor: getCssPropertyValue("--st-text-color"),
     font: getCssPropertyValue("--st-font"),
-    // Only select the necessary properties
-  } as StreamlitTheme)
+  })
 
   // NOTE: Each script run forces Bokeh to provide different ids for their
   // elements. For that reason, this will always update the chart.

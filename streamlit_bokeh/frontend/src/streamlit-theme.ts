@@ -56,8 +56,13 @@ class BokehTheme {
   }
 }
 
-export function streamlitTheme(theme: StreamlitTheme): BokehTheme {
-  const { backgroundColor, secondaryBackgroundColor, textColor } = theme
+export type MinimalStreamlitTheme = Pick<
+  StreamlitTheme,
+  "font" | "textColor" | "backgroundColor" | "secondaryBackgroundColor"
+>
+
+export function streamlitTheme(theme: MinimalStreamlitTheme): BokehTheme {
+  const { backgroundColor, secondaryBackgroundColor, textColor, font } = theme
   const fadedText10 = transparentize(textColor, 0.8)
 
   return new BokehTheme({
@@ -82,14 +87,12 @@ export function streamlitTheme(theme: StreamlitTheme): BokehTheme {
       axis_line_color: textColor,
 
       major_label_text_color: textColor,
-      // We hardcode the font to use the one provided by Streamlit
-      major_label_text_font: '"Source Sans", sans-serif',
+      major_label_text_font: font,
       major_label_text_font_size: "1em",
 
       axis_label_standoff: 10,
       axis_label_text_color: textColor,
-      // We hardcode the font to use the one provided by Streamlit
-      axis_label_text_font: '"Source Sans", sans-serif',
+      axis_label_text_font: font,
       axis_label_text_font_size: "1em",
       axis_label_text_font_style: "normal",
     },
@@ -99,8 +102,7 @@ export function streamlitTheme(theme: StreamlitTheme): BokehTheme {
 
       label_standoff: 8,
       label_text_color: textColor,
-      // We hardcode the font to use the one provided by Streamlit
-      label_text_font: '"Source Sans", sans-serif',
+      label_text_font: font,
       label_text_font_size: "1.025em",
 
       border_line_alpha: 0,
@@ -109,14 +111,12 @@ export function streamlitTheme(theme: StreamlitTheme): BokehTheme {
     },
     BaseColorBar: {
       title_text_color: textColor,
-      // We hardcode the font to use the one provided by Streamlit
-      title_text_font: '"Source Sans", sans-serif',
+      title_text_font: font,
       title_text_font_size: "1.025em",
       title_text_font_style: "normal",
 
       major_label_text_color: textColor,
-      // We hardcode the font to use the one provided by Streamlit
-      major_label_text_font: '"Source Sans", sans-serif',
+      major_label_text_font: font,
       major_label_text_font_size: "1.025em",
 
       background_fill_color: secondaryBackgroundColor,
@@ -125,8 +125,7 @@ export function streamlitTheme(theme: StreamlitTheme): BokehTheme {
     },
     Title: {
       text_color: textColor,
-      // We hardcode the font to use the one provided by Streamlit
-      text_font: '"Source Sans", sans-serif',
+      text_font: font,
       text_font_size: "1.15em",
     },
   })
