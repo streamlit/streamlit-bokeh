@@ -212,13 +212,21 @@ const getOrCreateInstanceState = (
   return state
 }
 
+const getCssPropertyValue = (
+  property: keyof StreamlitThemeCssProperties,
+  container: HTMLElement
+) => {
+  const style = getComputedStyle(container)
+  return style.getPropertyValue(property)
+}
+
 const bokehComponent = async (component: ComponentArgs<{}, ComponentData>) => {
-  const { parentElement, key } = component
+  const { parentElement, data, key } = component
   const {
     figure,
     bokeh_theme: bokehTheme,
     use_container_width: useContainerWidth,
-  } = component.data
+  } = data
 
   const state = getOrCreateInstanceState(parentElement)
 
@@ -244,19 +252,15 @@ const bokehComponent = async (component: ComponentArgs<{}, ComponentData>) => {
     throw new Error("Chart not found")
   }
 
-  const getCssPropertyValue = (property: keyof StreamlitThemeCssProperties) => {
-    const style = getComputedStyle(container)
-    return style.getPropertyValue(property)
-  }
-
   const { data: chartData, hasChanged } = getChartData(figure, key)
   const themeChanged = setChartTheme(bokehTheme, {
-    backgroundColor: getCssPropertyValue("--st-background-color"),
+    backgroundColor: getCssPropertyValue("--st-background-color", container),
     secondaryBackgroundColor: getCssPropertyValue(
-      "--st-secondary-background-color"
+      "--st-secondary-background-color",
+      container
     ),
-    textColor: getCssPropertyValue("--st-text-color"),
-    font: getCssPropertyValue("--st-font"),
+    textColor: getCssPropertyValue("--st-text-color", container),
+    font: getCssPropertyValue("--st-font", container),
   })
 
   // NOTE: Each script run forces Bokeh to provide different ids for their
