@@ -157,6 +157,23 @@ async function ensureBokehCoreLoaded(coreUrl: string, timeoutMs = 10000) {
   return bokehLoadPromise
 }
 
+const BOKEH_URLS = {
+  core: resolveAssetUrl(bokehMin),
+  widgets: resolveAssetUrl(bokehWidgets),
+  tables: resolveAssetUrl(bokehTables),
+  api: resolveAssetUrl(bokehApi),
+  gl: resolveAssetUrl(bokehGl),
+  mathjax: resolveAssetUrl(bokehMathjax),
+}
+
+const PLUGIN_URLS = [
+  BOKEH_URLS.widgets,
+  BOKEH_URLS.tables,
+  BOKEH_URLS.api,
+  BOKEH_URLS.gl,
+  BOKEH_URLS.mathjax,
+]
+
 /**
  * Loads the Bokeh core runtime and plugins into the global document once.
  *
@@ -174,25 +191,9 @@ async function ensureBokehCoreLoaded(coreUrl: string, timeoutMs = 10000) {
  * @throws If the core or any plugin fails to load within the timeout.
  */
 export const loadBokehGlobally = async () => {
-  const urls = {
-    core: resolveAssetUrl(bokehMin),
-    widgets: resolveAssetUrl(bokehWidgets),
-    tables: resolveAssetUrl(bokehTables),
-    api: resolveAssetUrl(bokehApi),
-    gl: resolveAssetUrl(bokehGl),
-    mathjax: resolveAssetUrl(bokehMathjax),
-  }
-
-  // Load Bokeh core (global, idempotent)
-  await ensureBokehCoreLoaded(urls.core, 10000)
+  // Load Bokeh core first (global, idempotent)
+  await ensureBokehCoreLoaded(BOKEH_URLS.core, 10000)
 
   // Load plugins concurrently (global, idempotent)
-  const pluginUrls = [
-    urls.widgets,
-    urls.tables,
-    urls.api,
-    urls.gl,
-    urls.mathjax,
-  ]
-  await Promise.all(pluginUrls.map(url => loadScriptOnce(url, 10000)))
+  await Promise.all(PLUGIN_URLS.map(url => loadScriptOnce(url, 10000)))
 }
