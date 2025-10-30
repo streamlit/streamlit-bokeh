@@ -43,18 +43,18 @@ const DEFAULT_HEIGHT = 350 // px
  * if the figure is the same as the last time it was called.
  */
 export const getChartDataGenerator = () => {
-  const savedFigure: Record<string, string | null> = {}
-  const savedChartData: Record<string, object | null> = {}
+  let savedFigure: string | null = null
+  let savedChartData: object | null = null
 
-  return (figure: string, key: string) => {
-    if (figure !== savedFigure[key]) {
-      savedFigure[key] = figure
-      savedChartData[key] = JSON.parse(figure)
+  return (figure: string) => {
+    if (figure !== savedFigure) {
+      savedFigure = figure
+      savedChartData = JSON.parse(figure)
 
-      return { data: savedChartData[key], hasChanged: true }
+      return { data: savedChartData, hasChanged: true }
     }
 
-    return { data: savedChartData[key], hasChanged: false }
+    return { data: savedChartData, hasChanged: false }
   }
 }
 
@@ -251,7 +251,7 @@ const bokehComponent = async (component: ComponentArgs<{}, ComponentData>) => {
     throw new Error("Chart not found")
   }
 
-  const { data: chartData, hasChanged } = getChartData(figure, key)
+  const { data: chartData, hasChanged } = getChartData(figure)
   const themeChanged = setChartTheme(bokehTheme, {
     backgroundColor: getCssPropertyValue("--st-background-color", container),
     secondaryBackgroundColor: getCssPropertyValue(

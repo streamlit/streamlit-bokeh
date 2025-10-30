@@ -24,10 +24,7 @@ import {
 import { MinimalStreamlitTheme } from "./streamlit-theme"
 
 describe("getChartDataGenerator", () => {
-  let getChartData: (
-    figure: string,
-    key: string
-  ) => {
+  let getChartData: (figure: string) => {
     data: object | null
     hasChanged: boolean
   }
@@ -38,23 +35,23 @@ describe("getChartDataGenerator", () => {
 
   test("should return parsed data and hasChanged true on first call", () => {
     const figure = JSON.stringify({ key: "value" })
-    const result = getChartData(figure, "test")
+    const result = getChartData(figure)
 
     expect(result).toEqual({ data: { key: "value" }, hasChanged: true })
   })
 
   test("should return hasChanged false for the same figure", () => {
     const figure = JSON.stringify({ key: "value" })
-    getChartData(figure, "test")
-    const result = getChartData(figure, "test")
+    getChartData(figure)
+    const result = getChartData(figure)
 
     expect(result).toEqual({ data: { key: "value" }, hasChanged: false })
   })
 
   test("should return hasChanged true for a different figure", () => {
-    getChartData(JSON.stringify({ key: "value" }), "test")
+    getChartData(JSON.stringify({ key: "value" }))
     const newFigure = JSON.stringify({ key: "newValue" })
-    const result = getChartData(newFigure, "test")
+    const result = getChartData(newFigure)
 
     expect(result).toEqual({ data: { key: "newValue" }, hasChanged: true })
   })
