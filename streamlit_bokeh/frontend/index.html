@@ -1,0 +1,59 @@
+<!--
+ Copyright (c) Snowflake Inc. (2025)
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Streamlit Bokeh Chart</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Streamlit Bokeh Chart" />
+    <link
+      rel="preload"
+      href="fonts/SourceSansPro-Regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="fonts/SourceSansPro-SemiBold.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="fonts/SourceSansPro-Bold.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="index.css" />
+    <script src="/bokeh/bokeh-3.8.0.min.js"></script>
+    <script src="/bokeh/bokeh-widgets-3.8.0.min.js"></script>
+    <script src="/bokeh/bokeh-tables-3.8.0.min.js"></script>
+    <script src="/bokeh/bokeh-api-3.8.0.min.js"></script>
+    <script src="/bokeh/bokeh-gl-3.8.0.min.js"></script>
+    <script src="/bokeh/bokeh-mathjax-3.8.0.min.js"></script>
+    <script type="module" src="/src/index-legacy.ts"></script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="stBokehChart"></div>
+  </body>
+</html>

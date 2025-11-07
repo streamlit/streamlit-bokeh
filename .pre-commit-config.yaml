@@ -59,6 +59,7 @@ repos:
         exclude: |
           (?x)
           ^streamlit_bokeh/frontend/src/assets/bokeh/
+          |^streamlit_bokeh/frontend/public/bokeh/
           |^streamlit_bokeh/frontend/.yarn/
       - id: insert-license
         name: Add license for all Python files
@@ -86,6 +87,7 @@ repos:
           (?x)
           ^streamlit_bokeh/frontend/src/assets/bokeh
           |^streamlit_bokeh/frontend/src/assets/fonts
+          |^streamlit_bokeh/frontend/public/bokeh/
           |^NOTICES$
       - id: check-added-large-files
         args: ['--maxkb=1024']

@@ -14,6 +14,8 @@
 
 import importlib.metadata
 import json
+import os
+import re
 from typing import TYPE_CHECKING
 
 import bokeh
@@ -24,11 +26,66 @@ if TYPE_CHECKING:
     from bokeh.plotting.figure import Figure
 
 
-_component_func = st.components.v2.component(
-    "streamlit-bokeh.streamlit_bokeh",
-    js="index-*.mjs",
-    html="<div class='stBokehContainer'></div>",
-)
+# Create a _RELEASE constant. We'll set this to False while we're developing
+# the component, and True when we're ready to package and distribute it.
+# (This is, of course, optional - there are innumerable ways to manage your
+# release process.)
+_DEV = os.environ.get("DEV", False)
+_RELEASE = not _DEV
+
+
+def _version_ge(a: str, b: str) -> bool:
+    """
+    Return True if version string a is greater than or equal to b.
+
+    The comparison extracts up to three numeric components from each version
+    string (major, minor, patch) and compares them as integer tuples.
+    Non-numeric suffixes (for example, 'rc1', 'dev') are ignored.
+
+    Parameters
+    ----------
+    a : str
+        The left-hand version string.
+    b : str
+        The right-hand version string to compare against.
+
+    Returns
+    -------
+    bool
+        True if a >= b, otherwise False.
+    """
+
+    def parse(v: str) -> tuple[int, int, int]:
+        nums = [int(x) for x in re.findall(r"\d+", v)[:3]]
+        while len(nums) < 3:
+            nums.append(0)
+        return nums[0], nums[1], nums[2]
+
+    return parse(a) >= parse(b)
+
+
+_STREAMLIT_VERSION = importlib.metadata.version("streamlit")
+
+# Version-gated component registration
+# If streamlit version is >= 1.51.0 use v2 API, otherwise use v1 API
+if _version_ge(_STREAMLIT_VERSION, "1.51.0"):
+    _component_func = st.components.v2.component(
+        "streamlit-bokeh.streamlit_bokeh",
+        js="index-*.mjs",
+        html="<div class='stBokehContainer'></div>",
+    )
+else:
+    if not _RELEASE:
+        _component_func = st.components.v1.declare_component(
+            "streamlit_bokeh",
+            url="http://localhost:3001",
+        )
+    else:
+        parent_dir = os.path.dirname(os.path.abspath(__file__))
+        build_dir = os.path.join(parent_dir, "frontend/build")
+        _component_func = st.components.v1.declare_component(
+            "streamlit_bokeh", path=build_dir
+        )
 
 
 __version__ = importlib.metadata.version("streamlit_bokeh")

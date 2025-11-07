@@ -6,12 +6,15 @@
   "dependencies": {
     "@bokeh/bokehjs": "^3.8.0",
     "@streamlit/component-v2-lib": "^0.1.0",
-    "color2k": "^2.0.3"
+    "color2k": "^2.0.3",
+    "streamlit-component-lib": "^2.0.0"
   },
   "scripts": {
+    "build:legacy": "yarn clean && yarn typecheck && NODE_ENV=production vite build --config vite.legacy.config.ts",
     "build": "yarn clean && yarn typecheck && NODE_ENV=production vite build",
     "clean": "rm -rf build",
     "dev": "NODE_ENV=development vite build --watch",
+    "dev:legacy": "NODE_ENV=development vite --config vite.legacy.config.ts",
     "format": "prettier --write src/**/*.ts vite.config.ts",
     "test:dev": "vitest",
     "test": "vitest --run",
