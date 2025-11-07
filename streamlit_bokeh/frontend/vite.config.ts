@@ -30,7 +30,7 @@ export default defineConfig(() => {
     },
     build: {
       minify: isDev ? false : "esbuild",
-      outDir: "build",
+      outDir: "build/v2",
       sourcemap: isDev,
       lib: {
         entry: "./src/index.ts",

@@ -85,7 +85,7 @@ else:
         )
     else:
         parent_dir = os.path.dirname(os.path.abspath(__file__))
-        build_dir = os.path.join(parent_dir, "frontend/build")
+        build_dir = os.path.join(parent_dir, "frontend/build/v1")
         _component_func = st.components.v1.declare_component(
             "streamlit_bokeh", path=build_dir
         )
@@ -145,7 +145,7 @@ def streamlit_bokeh(
 
     if _IS_USING_CCV2:
         # Call through to our private component function.
-        out = _component_func(
+        _component_func(
             key=key,
             data={
                 "figure": json.dumps(json_item(figure)),
@@ -154,7 +154,8 @@ def streamlit_bokeh(
             },
             isolate_styles=False,
         )
-        return out
+
+        return None
     else:
         # Call through to our private component function. Arguments we pass here
         # will be sent to the frontend, where they'll be available in an "args"

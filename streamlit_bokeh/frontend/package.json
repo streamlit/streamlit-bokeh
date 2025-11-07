@@ -12,6 +12,7 @@
   "scripts": {
     "build:legacy": "yarn clean && yarn typecheck && NODE_ENV=production vite build --config vite.legacy.config.ts",
     "build": "yarn clean && yarn typecheck && NODE_ENV=production vite build",
+    "build:all": "yarn clean && yarn typecheck && NODE_ENV=production vite build --config vite.legacy.config.ts && NODE_ENV=production vite build",
     "clean": "rm -rf build",
     "dev": "NODE_ENV=development vite build --watch",
     "dev:legacy": "NODE_ENV=development vite --config vite.legacy.config.ts",

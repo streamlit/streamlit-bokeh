@@ -18,4 +18,4 @@ version = "3.8.0"
 
 [[tool.streamlit.component.components]]
 name = "streamlit_bokeh"
-asset_dir = "frontend/build"
+asset_dir = "frontend/build/v2"

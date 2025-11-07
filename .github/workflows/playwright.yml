@@ -53,7 +53,7 @@ jobs:
         run: |
           cd streamlit_bokeh/frontend
           yarn install --immutable
-          yarn build
+          yarn build:all
       # Combine hashes of the Python interpreter, Pipfile, and today's
       # date into a file whose hash will key the Python virtualenv.
       #
