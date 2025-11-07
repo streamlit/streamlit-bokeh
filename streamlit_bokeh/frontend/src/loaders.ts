@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import bokehMin from "./assets/bokeh/bokeh-3.8.0.min.js?url&no-inline"
-import bokehApi from "./assets/bokeh/bokeh-api-3.8.0.min.js?url&no-inline"
-import bokehGl from "./assets/bokeh/bokeh-gl-3.8.0.min.js?url&no-inline"
-import bokehMathjax from "./assets/bokeh/bokeh-mathjax-3.8.0.min.js?url&no-inline"
-import bokehTables from "./assets/bokeh/bokeh-tables-3.8.0.min.js?url&no-inline"
-import bokehWidgets from "./assets/bokeh/bokeh-widgets-3.8.0.min.js?url&no-inline"
+// Bokeh assets are served from Vite's publicDir under "bokeh/". Use BASE_URL
+// so both dev and build (including library builds) resolve correctly.
+const BOKEH_BASE =
+  (typeof import.meta !== "undefined" &&
+    (import.meta as any).env?.BASE_URL?.replace(/\/?$/, "/")) ||
+  "./"
+const BOKEH_PUBLIC = `${BOKEH_BASE}bokeh/`
 
 /**
  * Resolves an asset reference (relative path or absolute URL) to an absolute
@@ -158,12 +159,12 @@ async function ensureBokehCoreLoaded(coreUrl: string, timeoutMs = 10000) {
 }
 
 const BOKEH_URLS = {
-  core: resolveAssetUrl(bokehMin),
-  widgets: resolveAssetUrl(bokehWidgets),
-  tables: resolveAssetUrl(bokehTables),
-  api: resolveAssetUrl(bokehApi),
-  gl: resolveAssetUrl(bokehGl),
-  mathjax: resolveAssetUrl(bokehMathjax),
+  core: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-3.8.0.min.js`),
+  widgets: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-widgets-3.8.0.min.js`),
+  tables: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-tables-3.8.0.min.js`),
+  api: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-api-3.8.0.min.js`),
+  gl: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-gl-3.8.0.min.js`),
+  mathjax: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-mathjax-3.8.0.min.js`),
 }
 
 const PLUGIN_URLS = [

@@ -66,9 +66,12 @@ def _version_ge(a: str, b: str) -> bool:
 
 _STREAMLIT_VERSION = importlib.metadata.version("streamlit")
 
+# If streamlit version is >= 1.51.0 use Custom Component v2 API, otherwise use
+# Custom Component v1 API
+_IS_USING_CCV2 = _version_ge(_STREAMLIT_VERSION, "1.51.0")
+
 # Version-gated component registration
-# If streamlit version is >= 1.51.0 use v2 API, otherwise use v1 API
-if _version_ge(_STREAMLIT_VERSION, "1.51.0"):
+if _IS_USING_CCV2:
     _component_func = st.components.v2.component(
         "streamlit-bokeh.streamlit_bokeh",
         js="index-*.mjs",
@@ -140,14 +143,27 @@ def streamlit_bokeh(
             f"{REQUIRED_BOKEH_VERSION}` to install the correct version."
         )
 
-    # Call through to our private component function.
-    out = _component_func(
-        key=key,
-        data={
-            "figure": json.dumps(json_item(figure)),
-            "bokeh_theme": theme,
-            "use_container_width": use_container_width,
-        },
-        isolate_styles=False,
-    )
-    return out
+    if _IS_USING_CCV2:
+        # Call through to our private component function.
+        out = _component_func(
+            key=key,
+            data={
+                "figure": json.dumps(json_item(figure)),
+                "bokeh_theme": theme,
+                "use_container_width": use_container_width,
+            },
+            isolate_styles=False,
+        )
+        return out
+    else:
+        # Call through to our private component function. Arguments we pass here
+        # will be sent to the frontend, where they'll be available in an "args"
+        # dictionary.
+        _component_func(
+            figure=json.dumps(json_item(figure)),
+            use_container_width=use_container_width,
+            bokeh_theme=theme,
+            key=key,
+        )
+
+        return None
