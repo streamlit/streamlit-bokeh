@@ -29,7 +29,8 @@ export default defineConfig(() => {
       port,
     },
     build: {
-      outDir: "build/v1",
+      outDir: "build",
+      copyPublicDir: false,
     },
   } satisfies UserConfig
 })

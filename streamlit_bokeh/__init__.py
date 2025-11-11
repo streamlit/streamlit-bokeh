@@ -74,7 +74,7 @@ _IS_USING_CCV2 = _version_ge(_STREAMLIT_VERSION, "1.51.0")
 if _IS_USING_CCV2:
     _component_func = st.components.v2.component(
         "streamlit-bokeh.streamlit_bokeh",
-        js="index-*.mjs",
+        js="v2/index-*.mjs",
         html="<div class='stBokehContainer'></div>",
     )
 else:
@@ -85,7 +85,7 @@ else:
         )
     else:
         parent_dir = os.path.dirname(os.path.abspath(__file__))
-        build_dir = os.path.join(parent_dir, "frontend/build/v1")
+        build_dir = os.path.join(parent_dir, "frontend/build")
         _component_func = st.components.v1.declare_component(
             "streamlit_bokeh", path=build_dir
         )

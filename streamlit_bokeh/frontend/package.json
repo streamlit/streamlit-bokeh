@@ -10,12 +10,13 @@
     "streamlit-component-lib": "^2.0.0"
   },
   "scripts": {
-    "build:legacy": "yarn clean && yarn typecheck && NODE_ENV=production vite build --config vite.legacy.config.ts",
-    "build": "yarn clean && yarn typecheck && NODE_ENV=production vite build",
-    "build:all": "yarn clean && yarn typecheck && NODE_ENV=production vite build --config vite.legacy.config.ts && NODE_ENV=production vite build",
+    "build:v1": "yarn clean && yarn typecheck && NODE_ENV=production vite build --config vite.v1.config.ts && yarn copy:bokeh && yarn copy:bokeh",
+    "build:v2": "yarn clean && yarn typecheck && NODE_ENV=production vite build && yarn copy:bokeh",
+    "build": "yarn clean && yarn typecheck && NODE_ENV=production vite build --config vite.v1.config.ts && NODE_ENV=production vite build && yarn copy:bokeh",
     "clean": "rm -rf build",
+    "copy:bokeh": "mkdir -p build && cp -R public/bokeh build/",
+    "dev:v1": "NODE_ENV=development vite --config vite.v1.config.ts",
     "dev": "NODE_ENV=development vite build --watch",
-    "dev:legacy": "NODE_ENV=development vite --config vite.legacy.config.ts",
     "format": "prettier --write src/**/*.ts vite.config.ts",
     "test:dev": "vitest",
     "test": "vitest --run",

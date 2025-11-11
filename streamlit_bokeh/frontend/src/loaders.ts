@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-// Bokeh assets are served from Vite's publicDir under "bokeh/". Use BASE_URL
-// so both dev and build (including library builds) resolve correctly.
-const BOKEH_BASE =
-  (typeof import.meta !== "undefined" &&
-    (import.meta as any).env?.BASE_URL?.replace(/\/?$/, "/")) ||
-  "./"
-const BOKEH_PUBLIC = `${BOKEH_BASE}bokeh/`
+// Bokeh assets path:
+// - In dev: served from Vite's public dir at "/bokeh/"
+// - In prod builds: shared once at "../bokeh/" (sibling of v1/ and v2/)
+const BOKEH_PUBLIC =
+  typeof import.meta !== "undefined" && (import.meta as any).env?.DEV
+    ? "/bokeh/"
+    : "../bokeh/"
 
 /**
  * Resolves an asset reference (relative path or absolute URL) to an absolute

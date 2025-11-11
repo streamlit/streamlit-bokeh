@@ -32,6 +32,7 @@ export default defineConfig(() => {
       minify: isDev ? false : "esbuild",
       outDir: "build/v2",
       sourcemap: isDev,
+      copyPublicDir: false,
       lib: {
         entry: "./src/index.ts",
         name: "MyComponent",
