@@ -19,7 +19,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = SCRIPT_DIR.parent / "streamlit_bokeh/frontend"
 OUTPUT_FILE = SCRIPT_DIR.parent / "NOTICES"
 ADDITIONAL_LICENSES = [
-    FRONTEND_DIR / "src/assets/bokeh/LICENSE.txt",
+    FRONTEND_DIR / "public/bokeh/LICENSE.txt",
 ]
 
 if __name__ == "__main__":
