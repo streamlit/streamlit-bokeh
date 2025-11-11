@@ -30,7 +30,7 @@ export default defineConfig(() => {
     },
     build: {
       outDir: "build",
-      copyPublicDir: false,
+      copyPublicDir: true,
     },
   } satisfies UserConfig
 })
