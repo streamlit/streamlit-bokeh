@@ -21,6 +21,10 @@ concurrency:
 jobs:
   playwright-e2e-tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        streamlit: ['1.50.0', 'latest']
 
     defaults:
       run:
@@ -88,6 +92,11 @@ jobs:
           source venv/bin/activate
           pip install --upgrade pip
           pip install -r e2e_playwright/test-requirements.txt
+          if [[ "${{ matrix.streamlit }}" == "latest" ]]; then
+            pip install streamlit
+          else
+            pip install "streamlit==${{ matrix.streamlit }}"
+          fi
           python -m playwright install --with-deps
       - name: Run playwright tests
         run: |
@@ -98,5 +107,5 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright_test_results
+          name: playwright_test_results-${{ matrix.streamlit }}
           path: e2e_playwright/test-results
