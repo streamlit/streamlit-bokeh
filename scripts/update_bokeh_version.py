@@ -197,6 +197,49 @@ def update_loader_imports(old_bokeh_version, new_bokeh_version):
         f.write(contents)
 
 
+def update_index_html(frontend_dir, old_version, new_version):
+    """
+    Update the index.html files to reference the new Bokeh asset version.
+    Only the source Vite entry point (`frontend/index.html`) needs to be updated,
+    since build artifacts are regenerated.
+    """
+
+    index_html_paths = [os.path.join(frontend_dir, "index.html")]
+
+    cdn_suffixes = ["mathjax", "gl", "api", "tables", "widgets", ""]
+    found_index = False
+
+    for path in index_html_paths:
+        if not os.path.exists(path):
+            continue
+
+        found_index = True
+        with open(path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+
+        if old_version:
+            for suffix in cdn_suffixes:
+                old_str = (
+                    f"bokeh-{suffix}-{old_version}.min.js"
+                    if suffix
+                    else f"bokeh-{old_version}.min.js"
+                )
+                new_str = (
+                    f"bokeh-{suffix}-{new_version}.min.js"
+                    if suffix
+                    else f"bokeh-{new_version}.min.js"
+                )
+                html_content = html_content.replace(old_str, new_str)
+
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(html_content)
+
+    if not found_index:
+        print(
+            "No index.html found under streamlit_bokeh/frontend. Skipping HTML update."
+        )
+
+
 def check_remote_branch_exists(remote: str, new_version: str) -> bool:
     branch_name = f"release/{new_version}"
     try:
@@ -251,6 +294,7 @@ if __name__ == "__main__":
 
     print("New version available!")
     assets_dir = "streamlit_bokeh/frontend/src/assets"
+    frontend_dir = "streamlit_bokeh/frontend"
 
     # Remove original files
     bokeh_dir = os.path.join(assets_dir, "bokeh")
@@ -260,7 +304,8 @@ if __name__ == "__main__":
             os.remove(os.path.join(bokeh_dir, filename))
 
     download_files(new_bokeh_version, assets_dir)
-    # Update the bokeh dependency version in TS loader and __init__.py
+    # Update the bokeh dependency version in index.html, TS loader and __init__.py
+    update_index_html(frontend_dir, old_bokeh_version, new_bokeh_version)
     update_loader_imports(old_bokeh_version, new_bokeh_version)
     update_init_py(old_bokeh_version, new_bokeh_version)
 
