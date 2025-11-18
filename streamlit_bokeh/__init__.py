@@ -70,10 +70,6 @@ _STREAMLIT_VERSION = importlib.metadata.version("streamlit")
 # Custom Component v1 API
 _IS_USING_CCV2 = _version_ge(_STREAMLIT_VERSION, "1.51.0")
 
-print(f"Streamlit version: {_STREAMLIT_VERSION}")
-print(f"Using Custom Component v2 API: {_IS_USING_CCV2}")
-print(f"Release: {_RELEASE}")
-
 # Version-gated component registration
 if _IS_USING_CCV2:
     _component_func = st.components.v2.component(
