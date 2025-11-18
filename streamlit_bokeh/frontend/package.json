@@ -10,13 +10,13 @@
     "streamlit-component-lib": "^2.0.0"
   },
   "scripts": {
-    "build:v1": "yarn clean && yarn typecheck && NODE_ENV=production vite build --config vite.v1.config.ts && yarn copy:bokeh && yarn copy:bokeh",
-    "build:v2": "yarn clean && yarn typecheck && NODE_ENV=production vite build && yarn copy:bokeh",
-    "build": "yarn clean && yarn typecheck && NODE_ENV=production vite build --config vite.v1.config.ts && NODE_ENV=production vite build && yarn copy:bokeh",
-    "clean": "rm -rf build",
+    "build:v1": "yarn clean && yarn typecheck && cross-env NODE_ENV=production vite build --config vite.v1.config.ts && yarn copy:bokeh && yarn copy:bokeh",
+    "build:v2": "yarn clean && yarn typecheck && cross-env NODE_ENV=production vite build && yarn copy:bokeh",
+    "build": "yarn clean && yarn typecheck && cross-env NODE_ENV=production vite build --config vite.v1.config.ts && cross-env NODE_ENV=production vite build && yarn copy:bokeh",
+    "clean": "rimraf build",
     "copy:bokeh": "mkdir -p build && cp -R public/bokeh build/",
-    "dev:v1": "DEV=1 NODE_ENV=development vite --config vite.v1.config.ts",
-    "dev": "DEV=1 NODE_ENV=development vite build --watch",
+    "dev:v1": "cross-env DEV=1 NODE_ENV=development vite --config vite.v1.config.ts",
+    "dev": "cross-env DEV=1 NODE_ENV=development vite build --watch",
     "format": "prettier --write src/**/*.ts vite.config.ts",
     "test:dev": "vitest",
     "test": "vitest --run",
@@ -31,8 +31,10 @@
   "homepage": ".",
   "devDependencies": {
     "@types/node": "^24.9.2",
+    "cross-env": "^10.1.0",
     "jsdom": "^26.1.0",
     "prettier": "^3.4.2",
+    "rimraf": "^6.1.0",
     "typescript": "^5.8.3",
     "vite": "^6.2.6",
     "vitest": "^3.2.4"
