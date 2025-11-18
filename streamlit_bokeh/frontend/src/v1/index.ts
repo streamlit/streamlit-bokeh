@@ -194,5 +194,3 @@ Streamlit.setComponentReady()
 // Finally, tell Streamlit to update our initial height. We omit the
 // `height` parameter here to have it default to our scrollHeight.
 Streamlit.setFrameHeight()
-
-console.log("Bokeh chart component v1 loaded")
