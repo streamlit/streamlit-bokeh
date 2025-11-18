@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import subprocess
 from pathlib import Path
+import subprocess
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = SCRIPT_DIR.parent / "streamlit_bokeh/frontend"
