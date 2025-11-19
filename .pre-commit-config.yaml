@@ -52,7 +52,7 @@ repos:
         files: \.(s?css|jsx?|tsx?)$
         args:
           - --comment-style
-          - '/**| *| */'
+          - "/**| *| */"
           - --license-filepath
           - scripts/license-template.txt
           - --fuzzy-match-generates-todo
@@ -65,7 +65,7 @@ repos:
         files: \.py$|\.pyi$
         args:
           - --comment-style
-          - '|#|'
+          - "|#|"
           - --license-filepath
           - scripts/license-template.txt
           - --fuzzy-match-generates-todo
@@ -74,7 +74,7 @@ repos:
         files: \.html$
         args:
           - --comment-style
-          - '<!--||-->'
+          - "<!--||-->"
           - --license-filepath
           - scripts/license-template.txt
           - --fuzzy-match-generates-todo
@@ -88,7 +88,7 @@ repos:
           |^streamlit_bokeh/frontend/public/fonts
           |^NOTICES$
       - id: check-added-large-files
-        args: ['--maxkb=1024']
+        args: ["--maxkb=1024"]
         exclude: |
           (?x)
           |^NOTICES$
