@@ -61,7 +61,7 @@ corepack enable
 yarn install
 yarn build          # one-time build to produce frontend/build assets
 # Optional: watch mode during development
-yarn dev
+yarn dev:v2 # or yarn dev:v1 for v1
 ```
 
 ### 4) Run a local demo
