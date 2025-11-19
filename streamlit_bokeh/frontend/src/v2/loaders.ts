@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-// Bokeh assets path:
-// - In dev: served from Vite's public dir at "/bokeh/"
-// - In prod builds: shared once at "../bokeh/" (sibling of v1/ and v2/)
-const BOKEH_PUBLIC =
-  typeof import.meta !== "undefined" && (import.meta as any).env?.DEV
-    ? "/bokeh/"
-    : "../bokeh/"
+const BOKEH_PUBLIC = "../bokeh/"
 
 /**
  * Resolves an asset reference (relative path or absolute URL) to an absolute

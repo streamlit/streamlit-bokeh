@@ -11,13 +11,13 @@
   },
   "scripts": {
     "build:v1": "yarn clean && yarn typecheck && cross-env NODE_ENV=production vite build --config vite.v1.config.ts && yarn copy:bokeh && yarn copy:bokeh",
-    "build:v2": "yarn clean && yarn typecheck && cross-env NODE_ENV=production vite build && yarn copy:bokeh",
-    "build": "yarn clean && yarn typecheck && cross-env NODE_ENV=production vite build --config vite.v1.config.ts && cross-env NODE_ENV=production vite build && yarn copy:bokeh",
+    "build:v2": "yarn clean && yarn typecheck && cross-env NODE_ENV=production vite build --config vite.v2.config.ts && yarn copy:bokeh",
+    "build": "yarn clean && yarn typecheck && cross-env NODE_ENV=production vite build --config vite.v1.config.ts && cross-env NODE_ENV=production vite build --config vite.v2.config.ts && yarn copy:bokeh",
     "clean": "rimraf build",
     "copy:bokeh": "mkdir -p build && cp -R public/bokeh build/",
     "dev:v1": "cross-env DEV=1 NODE_ENV=development vite --config vite.v1.config.ts",
-    "dev": "cross-env DEV=1 NODE_ENV=development vite build --watch",
-    "format": "prettier --write src/**/*.ts vite.config.ts",
+    "dev:v2": "yarn copy:bokeh && cross-env DEV=1 NODE_ENV=development vite build --config vite.v2.config.ts --watch",
+    "format": "prettier --write src/**/*.ts vite.*.config.ts vitest.config.ts tsconfig.json index.html",
     "test:dev": "vitest",
     "test": "vitest --run",
     "typecheck": "tsc --noEmit"
