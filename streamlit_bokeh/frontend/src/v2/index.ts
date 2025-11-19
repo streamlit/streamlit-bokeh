@@ -153,10 +153,8 @@ async function updateChart(
     }
   }
 
-  if (chart !== null) {
-    removeAllChildNodes(chart)
-    await window.Bokeh.embed.embed_item(data, key)
-  }
+  removeAllChildNodes(chart)
+  await window.Bokeh.embed.embed_item(data, key)
 }
 
 interface ComponentData {
