@@ -34,7 +34,7 @@ export default defineConfig(() => {
       sourcemap: isDev,
       copyPublicDir: false,
       lib: {
-        entry: "./src/index.ts",
+        entry: "./src/v2/index.ts",
         name: "MyComponent",
         formats: ["es"],
         fileName: "index-[hash]",
