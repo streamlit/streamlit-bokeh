@@ -14,25 +14,6 @@
  * limitations under the License.
  */
 
-import { vi } from "vitest"
-
-const useTheme = vi.fn()
-
-window.Bokeh = {
-  Themes: {
-    caliber: null,
-    dark_minimal: null,
-    light_minimal: null,
-    contrast: null,
-    night_sky: null,
-  },
-  require: name => {
-    if (name === "core/properties") {
-      return {
-        use_theme: useTheme,
-      }
-    }
-
-    return {}
-  },
+export default function () {
+  // This is a placeholder.
 }

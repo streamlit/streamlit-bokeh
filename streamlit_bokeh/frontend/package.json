@@ -4,39 +4,39 @@
   "version": "3.8.0",
   "private": true,
   "dependencies": {
+    "@streamlit/component-v2-lib": "^0.1.0",
     "color2k": "^2.0.3",
-    "react-scripts": "^5.0.1",
     "streamlit-component-lib": "^2.0.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "format": "prettier --write src/**/*.ts",
-    "build": "react-scripts build",
-    "test": "react-scripts test --transformIgnorePatterns='node_modules/(?!streamlit-component-lib)/'",
-    "eject": "react-scripts eject"
+    "build:v1": "yarn clean && yarn typecheck && cross-env NODE_ENV=production vite build --config vite.v1.config.ts && yarn copy:bokeh",
+    "build:v2": "yarn clean && yarn typecheck && cross-env NODE_ENV=production vite build --config vite.v2.config.ts && yarn copy:bokeh",
+    "build": "yarn clean && yarn typecheck && cross-env NODE_ENV=production vite build --config vite.v1.config.ts && cross-env NODE_ENV=production vite build --config vite.v2.config.ts && yarn copy:bokeh",
+    "clean": "rimraf build",
+    "copy:bokeh": "mkdir -p build && cp -R public/bokeh build/",
+    "dev:v1": "cross-env DEV=1 NODE_ENV=development vite --config vite.v1.config.ts",
+    "dev:v2": "yarn copy:bokeh && cross-env DEV=1 NODE_ENV=development vite build --config vite.v2.config.ts --watch",
+    "format": "prettier --write src/**/*.ts vite.*.config.ts vitest.config.ts tsconfig.json index.html",
+    "test:dev": "vitest",
+    "test": "vitest --run",
+    "typecheck": "tsc --noEmit"
   },
-  "eslintConfig": {
-    "extends": "react-app"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ],
   "homepage": ".",
   "devDependencies": {
-    "@types/jest": "^24.0.0",
-    "@types/node": "^12.0.0",
+    "@types/node": "^24.9.2",
+    "cross-env": "^10.1.0",
+    "jsdom": "^26.1.0",
     "prettier": "^3.4.2",
-    "typescript": "^4.2.0",
-    "util": "^0.12.5"
+    "rimraf": "^6.1.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.2.6",
+    "vitest": "^3.2.4"
   },
   "packageManager": "yarn@4.6.0"
 }
