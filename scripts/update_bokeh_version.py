@@ -14,11 +14,14 @@
 
 import os
 import re
-import requests
-import semver
 import subprocess
 
-SETUP_PY_PATH = "setup.py"
+import requests
+import semver
+import toml
+
+PYPROJECT_TOML_PATH = "pyproject.toml"
+PACKAGE_PYPROJECT_TOML_PATH = "streamlit_bokeh/pyproject.toml"
 
 
 def get_latest_bokeh_version():
@@ -31,29 +34,31 @@ def get_latest_bokeh_version():
 
 
 def get_component_version():
-    with open(SETUP_PY_PATH, "r") as f:
-        setup_content = f.read()
+    with open(PYPROJECT_TOML_PATH, "r") as f:
+        pyproject_data = toml.load(f)
 
-    # Extract version from setup.py
-    match = re.search(r"version\s*=\s*['\"]([\d\.]+)(['\"])", setup_content)
+    # Extract version from pyproject.toml
+    version = pyproject_data.get("project", {}).get("version")
 
-    if match:
-        return match.group(1)
+    if version:
+        return version
     else:
-        raise ValueError("Bokeh version not found in the file")
+        raise ValueError("Component version not found in pyproject.toml")
 
 
 def get_dependency_bokeh_version():
-    with open(SETUP_PY_PATH, "r") as f:
-        setup_content = f.read()
+    with open(PYPROJECT_TOML_PATH, "r") as f:
+        pyproject_data = toml.load(f)
 
-    # Extract Bokeh version from dependency line (e.g., bokeh==2.4.3)
-    match = re.search(r"bokeh\s*==\s*([\d\.]+)", setup_content)
+    # Extract Bokeh version from dependencies list
+    dependencies = pyproject_data.get("project", {}).get("dependencies", [])
 
-    if match:
-        return match.group(1)
-    else:
-        raise ValueError("Bokeh version not found in the file")
+    for dep in dependencies:
+        match = re.search(r"bokeh\s*==\s*([\d\.]+)", dep)
+        if match:
+            return match.group(1)
+
+    raise ValueError("Bokeh version not found in dependencies")
 
 
 def download_files(new_version, destination):
@@ -67,6 +72,9 @@ def download_files(new_version, destination):
         f"https://raw.githubusercontent.com/bokeh/bokeh/refs/tags/{new_version}/LICENSE.txt",
     ]
 
+    # Ensure destination/bokeh directory exists
+    os.makedirs(os.path.join(destination, "bokeh"), exist_ok=True)
+
     for url in files_to_download:
         filename = os.path.basename(url)
         print(f"Downloading {filename}")
@@ -77,28 +85,48 @@ def download_files(new_version, destination):
                 f.write(chunk)
 
 
-def update_setup_py(new_version, old_bokeh_version, new_bokeh_version):
-    with open(SETUP_PY_PATH, "r") as f:
-        setup_content = f.read()
+def update_pyproject_toml(new_version, old_bokeh_version, new_bokeh_version):
+    """
+    Update the project version and Bokeh dependency in the TOML files
+    without disturbing comments, headers, or table ordering.
 
-    # Replace package version in `version='...'`
-    # This pattern is naive; adapt as needed for your file structure.
-    setup_content = re.sub(
-        r"(version\s*=\s*['\"])([\d\.]+)(['\"])",
-        rf"\g<1>{new_version}\g<3>",
-        setup_content,
-    )
+    We intentionally operate on raw text instead of round-tripping through
+    a TOML serializer (which would drop comments and reformat sections).
+    """
+    for path in (PYPROJECT_TOML_PATH, PACKAGE_PYPROJECT_TOML_PATH):
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"File {path} not found")
 
-    # Replace bokeh==old_version with bokeh==new_version
-    if old_bokeh_version:
-        setup_content = re.sub(
-            rf"(bokeh\s*==\s*){old_bokeh_version}",
-            rf"\g<1>{new_bokeh_version}",
-            setup_content,
+        with open(path, "r", encoding="utf-8") as f:
+            contents = f.read()
+
+        # 1) Update the [project] version line.
+        #
+        # All pyproject.toml files in this repo have a single `version = "..."`
+        # entry under `[project]`. Anchoring at line-start ensures we don't
+        # accidentally rewrite a value in another table or in comments.
+        contents, replaced_version_count = re.subn(
+            r'(?m)^(version\s*=\s*")([^"]+)(")',
+            lambda m: f"{m.group(1)}{new_version}{m.group(3)}",
+            contents,
+            count=1,
         )
 
-    with open(SETUP_PY_PATH, "w") as f:
-        f.write(setup_content)
+        if replaced_version_count == 0:
+            raise ValueError(f"Could not find project version line in {path}")
+
+        # 2) Update the Bokeh dependency version. This only has an effect in the
+        # root pyproject, since the package-local pyproject does not currently
+        # declare dependencies.
+        if old_bokeh_version:
+            contents = re.sub(
+                rf"(bokeh\s*==\s*){re.escape(old_bokeh_version)}",
+                rf"\g<1>{new_bokeh_version}",
+                contents,
+            )
+
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(contents)
 
 
 def update_test_requirements(
@@ -160,16 +188,56 @@ def update_init_py(old_bokeh_version, new_bokeh_version):
         f.write(init_py_contents)
 
 
-def update_index_html(public_dir, old_version, new_version):
-    index_html_path = os.path.join(public_dir, "index.html")
-    if os.path.exists(index_html_path):
-        with open(index_html_path, "r", encoding="utf-8") as f:
+def update_loader_imports(old_bokeh_version, new_bokeh_version):
+    """
+    Update versioned Bokeh asset import paths in the TypeScript loader to the new version.
+
+    This replaces occurrences like `bokeh-3.8.0.min.js` with `bokeh-<new>.min.js`
+    in `streamlit_bokeh/frontend/src/v2/loaders.ts`.
+    """
+    loader_path = "streamlit_bokeh/frontend/src/v2/loaders.ts"
+    with open(loader_path, "r", encoding="utf-8") as f:
+        contents = f.read()
+
+    suffixes = ["mathjax", "gl", "api", "tables", "widgets", ""]
+    for suffix in suffixes:
+        old_str = (
+            f"bokeh-{suffix}-{old_bokeh_version}.min.js"
+            if suffix
+            else f"bokeh-{old_bokeh_version}.min.js"
+        )
+        new_str = (
+            f"bokeh-{suffix}-{new_bokeh_version}.min.js"
+            if suffix
+            else f"bokeh-{new_bokeh_version}.min.js"
+        )
+        contents = contents.replace(old_str, new_str)
+
+    with open(loader_path, "w", encoding="utf-8") as f:
+        f.write(contents)
+
+
+def update_index_html(frontend_dir, old_version, new_version):
+    """
+    Update the index.html files to reference the new Bokeh asset version.
+    Only the source Vite entry point (`frontend/index.html`) needs to be updated,
+    since build artifacts are regenerated.
+    """
+
+    index_html_paths = [os.path.join(frontend_dir, "index.html")]
+
+    cdn_suffixes = ["mathjax", "gl", "api", "tables", "widgets", ""]
+    found_index = False
+
+    for path in index_html_paths:
+        if not os.path.exists(path):
+            continue
+
+        found_index = True
+        with open(path, "r", encoding="utf-8") as f:
             html_content = f.read()
 
-        # If old_version is known, do a direct replacement
         if old_version:
-            # Replace each script reference with the new version
-            cdn_suffixes = ["mathjax", "gl", "api", "tables", "widgets", ""]
             for suffix in cdn_suffixes:
                 old_str = (
                     f"bokeh-{suffix}-{old_version}.min.js"
@@ -183,10 +251,13 @@ def update_index_html(public_dir, old_version, new_version):
                 )
                 html_content = html_content.replace(old_str, new_str)
 
-        with open(index_html_path, "w", encoding="utf-8") as f:
+        with open(path, "w", encoding="utf-8") as f:
             f.write(html_content)
-    else:
-        print("No index.html found in frontend/public. Skipping HTML update.")
+
+    if not found_index:
+        print(
+            "No index.html found under streamlit_bokeh/frontend. Skipping HTML update."
+        )
 
 
 def check_remote_branch_exists(remote: str, new_version: str) -> bool:
@@ -243,20 +314,25 @@ if __name__ == "__main__":
 
     print("New version available!")
     public_dir = "streamlit_bokeh/frontend/public"
+    frontend_dir = "streamlit_bokeh/frontend"
 
-    # Remove original files
+    # Remove original files from the public bokeh directory
     bokeh_dir = os.path.join(public_dir, "bokeh")
+    os.makedirs(bokeh_dir, exist_ok=True)
     for filename in os.listdir(bokeh_dir):
         if "bokeh" in filename and filename.endswith(".js"):
             os.remove(os.path.join(bokeh_dir, filename))
 
+    # Download new Bokeh assets into the public directory so they are served
+    # from `/bokeh` at runtime.
     download_files(new_bokeh_version, public_dir)
-    # Update the bokeh dependency version in index.html and __init__.py
-    update_index_html(public_dir, old_bokeh_version, new_bokeh_version)
+    # Update the bokeh dependency version in index.html, TS loader and __init__.py
+    update_index_html(frontend_dir, old_bokeh_version, new_bokeh_version)
+    update_loader_imports(old_bokeh_version, new_bokeh_version)
     update_init_py(old_bokeh_version, new_bokeh_version)
 
-    # Update the bokeh dependency version and component version in setup.py and test-requirements.txt
-    update_setup_py(new_version, old_bokeh_version, new_bokeh_version)
+    # Update the bokeh dependency version in pyproject.toml and test-requirements.txt
+    update_pyproject_toml(new_version, old_bokeh_version, new_bokeh_version)
     update_test_requirements(
         old_bokeh_version, new_bokeh_version, old_version, new_version
     )
