@@ -3,7 +3,7 @@ name: Playwright E2E Tests
 on:
   push:
     branches:
-      - "main"
+      - 'main'
   pull_request:
     types: [opened, synchronize, reopened]
   # Allows workflow to be called from other workflows
@@ -21,6 +21,10 @@ concurrency:
 jobs:
   playwright-e2e-tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        streamlit: ['1.50.0', 'latest']
 
     defaults:
       run:
@@ -32,12 +36,12 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
           persist-credentials: false
-          submodules: "recursive"
+          submodules: 'recursive'
           fetch-depth: 2
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: '3.12'
       - name: Enable and Prepare Latest Yarn
         run: |
           corepack enable
@@ -46,9 +50,9 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
-          cache: "yarn"
-          cache-dependency-path: "**/yarn.lock"
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+          cache-dependency-path: '**/yarn.lock'
       - name: Make frontend
         run: |
           cd streamlit_bokeh/frontend
@@ -88,6 +92,11 @@ jobs:
           source venv/bin/activate
           pip install --upgrade pip
           pip install -r e2e_playwright/test-requirements.txt
+          if [[ "${{ matrix.streamlit }}" == "latest" ]]; then
+            pip install streamlit
+          else
+            pip install "streamlit==${{ matrix.streamlit }}"
+          fi
           python -m playwright install --with-deps
       - name: Run playwright tests
         run: |
@@ -98,5 +107,5 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright_test_results
+          name: playwright_test_results-${{ matrix.streamlit }}
           path: e2e_playwright/test-results
