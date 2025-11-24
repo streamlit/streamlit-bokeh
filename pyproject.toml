@@ -1,0 +1,69 @@
+# Copyright (c) Snowflake Inc. (2025)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "streamlit-bokeh"
+version = "3.8.0"
+description = "Streamlit component that allows you to render Bokeh charts"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Snowflake Inc", email = "hello@streamlit.io" }]
+requires-python = ">=3.9"
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Environment :: Web Environment",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Visualization",
+]
+dependencies = ["streamlit>=1.26", "bokeh==3.8.0"]
+
+[project.optional-dependencies]
+devel = [
+  "wheel",
+  "pytest==7.4.0",
+  "playwright==1.48.0",
+  "requests==2.31.0",
+  "pytest-playwright-snapshot==1.0",
+  "pytest-rerunfailures==12.0",
+]
+
+[project.urls]
+Homepage = "https://streamlit.io"
+"Source Code" = "https://github.com/streamlit/streamlit-bokeh"
+"Bug Tracker" = "https://github.com/streamlit/streamlit/issues"
+Community = "https://discuss.streamlit.io/"
+Twitter = "https://twitter.com/streamlit"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["streamlit_bokeh*"]
+exclude = ["e2e_playwright*", "scripts*", "build*", "dist*", "venv*", ".*"]
+
+[tool.setuptools.package-data]
+streamlit_bokeh = ["frontend/build/**/*", "pyproject.toml"]
