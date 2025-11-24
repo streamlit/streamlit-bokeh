@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
+import pandas as pd
 import streamlit as st
 from bokeh.plotting import figure
 from chart_types import CHART_TYPES
-import numpy as np
-import pandas as pd
+
 from streamlit_bokeh import streamlit_bokeh
 
 np.random.seed(0)
@@ -188,9 +189,9 @@ elif chart == "lorenz":
         line_width=1.5,
     )
 elif chart == "linear_cmap":
-    from numpy.random import standard_normal
     from bokeh.transform import linear_cmap
     from bokeh.util.hex import hexbin
+    from numpy.random import standard_normal
 
     x = standard_normal(50000)
     y = standard_normal(50000)
@@ -279,6 +280,6 @@ elif chart == "stack_bar":
     p.legend.location = "top_left"
     p.legend.orientation = "horizontal"
 
-streamlit_bokeh(p, use_container_width=False)
+streamlit_bokeh(p, use_container_width=False, key="chart_1")
 
-streamlit_bokeh(p, use_container_width=True)
+streamlit_bokeh(p, use_container_width=True, key="chart_2")
