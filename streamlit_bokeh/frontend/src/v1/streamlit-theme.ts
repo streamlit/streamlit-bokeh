@@ -24,7 +24,7 @@ type AttrValue = string | number
 // Bokeh does not export their Theme Class, so we
 // simulate close to the class provided by Bokeh
 // The relevant class is located here:
-// https://github.com/bokeh/bokeh/blob/3.6.2/bokehjs/src/lib/api/themes.ts#L17
+// https://github.com/bokeh/bokeh/blob/3.8.0/bokehjs/src/lib/api/themes.ts#L17
 class BokehTheme {
   readonly attrs: Record<BokehObjectType, Record<AttrName, AttrValue>>
 

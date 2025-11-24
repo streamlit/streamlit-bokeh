@@ -13,26 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { defineConfig, UserConfig } from "vite"
 
-import { vi } from "vitest"
+/**
+ * Vite configuration for Streamlit React Component development
+ *
+ * @see https://vitejs.dev/config/ for complete Vite configuration options
+ */
+export default defineConfig(() => {
+  const port = process.env.VITE_PORT ? parseInt(process.env.VITE_PORT) : 3001
 
-const useTheme = vi.fn()
-
-window.Bokeh = {
-  Themes: {
-    caliber: null,
-    dark_minimal: null,
-    light_minimal: null,
-    contrast: null,
-    night_sky: null,
-  },
-  require: name => {
-    if (name === "core/properties") {
-      return {
-        use_theme: useTheme,
-      }
-    }
-
-    return {}
-  },
-}
+  return {
+    base: "./",
+    server: {
+      port,
+    },
+    build: {
+      outDir: "build",
+      copyPublicDir: true,
+    },
+  } satisfies UserConfig
+})
