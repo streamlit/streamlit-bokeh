@@ -41,6 +41,8 @@ from urllib import parse
 
 import pytest
 import requests
+import streamlit as st
+from packaging.version import Version
 from PIL import Image
 from playwright.sync_api import (
     ElementHandle,
@@ -49,7 +51,6 @@ from playwright.sync_api import (
     Page,
 )
 from pytest import FixtureRequest
-
 from shared.git_utils import get_git_root
 
 if TYPE_CHECKING:
@@ -74,6 +75,14 @@ def reorder_early_fixtures(metafunc: pytest.Metafunc):
 
 def pytest_generate_tests(metafunc: pytest.Metafunc):
     reorder_early_fixtures(metafunc)
+
+
+def _detect_streamlit_mode() -> str:
+    """Return 'v1' for Custom Component v1 API, 'v2' for Custom Component v2 API.
+
+    Streamlit introduces the Custom Component v2 API starting with version 1.51.0.
+    """
+    return "v2" if Version(st.__version__) >= Version("1.51.0") else "v1"
 
 
 class AsyncSubprocess:
@@ -204,6 +213,12 @@ def wait_for_app_server_to_start(port: int, timeout: int = 5) -> bool:
 
 
 # region Fixtures
+
+
+@pytest.fixture(scope="session")
+def is_v2() -> bool:
+    """True when running with Custom Component v2 API (Streamlit >= 1.51.0)."""
+    return _detect_streamlit_mode() == "v2"
 
 
 @pytest.fixture(scope="module")
@@ -419,7 +434,7 @@ def output_folder(pytestconfig: Any) -> Path:
 
 @pytest.fixture(scope="function")
 def assert_snapshot(
-    request: FixtureRequest, output_folder: Path
+    request: FixtureRequest, output_folder: Path, is_v2: bool
 ) -> Generator[ImageCompareFunction, None, None]:
     """Fixture that compares a screenshot with screenshot from a past run."""
     root_path = get_git_root()
@@ -443,6 +458,11 @@ def assert_snapshot(
     match = re.search(r"\[(.*?)\]", request.node.name)
     if match:
         snapshot_file_suffix = f"[{match.group(1)}]"
+    # Add version suffix for Streamlit v2 to allow parallel baselines
+    if is_v2:
+        snapshot_file_suffix = (
+            f"{snapshot_file_suffix[:-1]}-v2]" if snapshot_file_suffix else "[v2]"
+        )
 
     snapshot_default_file_name: str = test_function_name + snapshot_file_suffix
 

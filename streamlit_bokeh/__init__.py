@@ -15,12 +15,12 @@
 import importlib.metadata
 import json
 import os
-import re
 from typing import TYPE_CHECKING
 
 import bokeh
 import streamlit as st
 from bokeh.embed import json_item
+from packaging.version import Version
 
 if TYPE_CHECKING:
     from bokeh.plotting.figure import Figure
@@ -34,43 +34,11 @@ _DEV = os.environ.get("DEV", False)
 _RELEASE = not _DEV
 
 
-def _version_ge(a: str, b: str) -> bool:
-    """
-    Return True if version string a is greater than or equal to b.
-
-    The comparison extracts up to three numeric components from each version
-    string (major, minor, patch) and compares them as integer tuples.
-    Non-numeric suffixes (for example, 'rc1', 'dev') are ignored.
-
-    Parameters
-    ----------
-    a : str
-        The left-hand version string.
-    b : str
-        The right-hand version string to compare against.
-
-    Returns
-    -------
-    bool
-        True if a >= b, otherwise False.
-    """
-
-    def parse(v: str) -> tuple[int, int, int]:
-        nums = [int(x) for x in re.findall(r"\d+", v)[:3]]
-        while len(nums) < 3:
-            nums.append(0)
-        return nums[0], nums[1], nums[2]
-
-    return parse(a) >= parse(b)
-
-
 _STREAMLIT_VERSION = importlib.metadata.version("streamlit")
 
 # If streamlit version is >= 1.51.0 use Custom Component v2 API, otherwise use
 # Custom Component v1 API
-# _IS_USING_CCV2 = _version_ge(_STREAMLIT_VERSION, "1.51.0")
-# Temporarily setting this to False, will be updated in next PR.
-_IS_USING_CCV2 = False
+_IS_USING_CCV2 = Version(_STREAMLIT_VERSION) >= Version("1.51.0")
 
 # Version-gated component registration
 if _IS_USING_CCV2:
