@@ -40,7 +40,7 @@ jobs:
           cache-dependency-path: "**/yarn.lock"
 
       - name: Install dependencies
-        run: pip install requests semver
+        run: pip install requests semver toml
 
       - name: Run script
         id: compare_bokeh
