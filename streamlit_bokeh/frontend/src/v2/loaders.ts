@@ -153,12 +153,12 @@ async function ensureBokehCoreLoaded(coreUrl: string, timeoutMs = 10000) {
 }
 
 const BOKEH_URLS = {
-  core: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-3.8.0.min.js`),
-  widgets: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-widgets-3.8.0.min.js`),
-  tables: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-tables-3.8.0.min.js`),
-  api: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-api-3.8.0.min.js`),
-  gl: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-gl-3.8.0.min.js`),
-  mathjax: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-mathjax-3.8.0.min.js`),
+  core: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-3.8.1.min.js`),
+  widgets: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-widgets-3.8.1.min.js`),
+  tables: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-tables-3.8.1.min.js`),
+  api: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-api-3.8.1.min.js`),
+  gl: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-gl-3.8.1.min.js`),
+  mathjax: resolveAssetUrl(`${BOKEH_PUBLIC}bokeh-mathjax-3.8.1.min.js`),
 }
 
 const PLUGIN_URLS = [
