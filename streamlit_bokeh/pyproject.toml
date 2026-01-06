@@ -14,7 +14,7 @@
 
 [project]
 name = "streamlit-bokeh"
-version = "3.8.1"
+version = "3.8.2"
 
 [[tool.streamlit.component.components]]
 name = "streamlit_bokeh"
