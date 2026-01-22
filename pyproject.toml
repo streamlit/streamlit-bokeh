@@ -18,7 +18,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "streamlit-bokeh"
-version = "3.8.2"
+version = "3.8.3"
 description = "Streamlit component that allows you to render Bokeh charts"
 readme = "README.md"
 license = "Apache-2.0"
