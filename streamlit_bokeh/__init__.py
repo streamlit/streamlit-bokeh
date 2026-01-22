@@ -40,13 +40,24 @@ _STREAMLIT_VERSION = importlib.metadata.version("streamlit")
 # Custom Component v1 API
 _IS_USING_CCV2 = Version(_STREAMLIT_VERSION) >= Version("1.51.0")
 
+_ISOLATE_STYLES = False
+
+_IS_USING_UPDATED_ISOLATE_STYLES_PARAM = Version(_STREAMLIT_VERSION) >= Version(
+    "1.53.0"
+)
+
 # Version-gated component registration
 if _IS_USING_CCV2:
-    _component_func = st.components.v2.component(
-        "streamlit-bokeh.streamlit_bokeh",
-        js="v2/index-*.mjs",
-        html="<div class='stBokehContainer'></div>",
-    )
+    _component_kwargs: dict[str, object] = {
+        "name": "streamlit-bokeh.streamlit_bokeh",
+        "js": "v2/index-*.mjs",
+        "html": "<div class='stBokehContainer'></div>",
+    }
+    # Streamlit 1.53+ accepts isolate_styles in the `component(...)` call.
+    if _IS_USING_UPDATED_ISOLATE_STYLES_PARAM:
+        _component_kwargs["isolate_styles"] = _ISOLATE_STYLES
+
+    _component_func = st.components.v2.component(**_component_kwargs)
 else:
     if not _RELEASE:
         _component_func = st.components.v1.declare_component(
@@ -115,15 +126,20 @@ def streamlit_bokeh(
 
     if _IS_USING_CCV2:
         # Call through to our private component function.
-        _component_func(
-            key=key,
-            data={
+        _call_kwargs: dict[str, object] = {
+            "key": key,
+            "data": {
                 "figure": json.dumps(json_item(figure)),
                 "bokeh_theme": theme,
                 "use_container_width": use_container_width,
             },
-            isolate_styles=False,
-        )
+        }
+        # Streamlit 1.51-1.52 accepts isolate_styles on the returned component
+        # function (it moved to `component(...)` in 1.53).
+        if not _IS_USING_UPDATED_ISOLATE_STYLES_PARAM:
+            _call_kwargs["isolate_styles"] = _ISOLATE_STYLES
+
+        _component_func(**_call_kwargs)
 
         return None
     else:
