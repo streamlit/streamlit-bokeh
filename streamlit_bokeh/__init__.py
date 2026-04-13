@@ -1,16 +1,6 @@
 # Copyright (c) Snowflake Inc. (2025)
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Licensed under the Apache License, Version 2.0
 
 import importlib.metadata
 import json
@@ -26,18 +16,11 @@ if TYPE_CHECKING:
     from bokeh.plotting.figure import Figure
 
 
-# Create a _RELEASE constant. We'll set this to False while we're developing
-# the component, and True when we're ready to package and distribute it.
-# (This is, of course, optional - there are innumerable ways to manage your
-# release process.)
 _DEV = os.environ.get("DEV", False)
 _RELEASE = not _DEV
 
-
 _STREAMLIT_VERSION = importlib.metadata.version("streamlit")
 
-# If streamlit version is >= 1.51.0 use Custom Component v2 API, otherwise use
-# Custom Component v1 API
 _IS_USING_CCV2 = Version(_STREAMLIT_VERSION) >= Version("1.51.0")
 
 _ISOLATE_STYLES = False
@@ -46,18 +29,19 @@ _IS_USING_UPDATED_ISOLATE_STYLES_PARAM = Version(_STREAMLIT_VERSION) >= Version(
     "1.53.0"
 )
 
-# Version-gated component registration
+# Component registration
 if _IS_USING_CCV2:
     _component_kwargs: dict[str, object] = {
         "name": "streamlit-bokeh.streamlit_bokeh",
         "js": "v2/index-*.mjs",
         "html": "<div class='stBokehContainer'></div>",
     }
-    # Streamlit 1.53+ accepts isolate_styles in the `component(...)` call.
+
     if _IS_USING_UPDATED_ISOLATE_STYLES_PARAM:
         _component_kwargs["isolate_styles"] = _ISOLATE_STYLES
 
     _component_func = st.components.v2.component(**_component_kwargs)
+
 else:
     if not _RELEASE:
         _component_func = st.components.v1.declare_component(
@@ -82,75 +66,43 @@ def streamlit_bokeh(
     theme: str = "streamlit",
     key: str | None = None,
 ) -> None:
-    """Create a new instance of "streamlit_bokeh".
-
-    Parameters
-    ----------
-    figure: bokeh.plotting.figure.Figure
-        A Bokeh figure to plot.
-    use_container_width : bool
-        Whether to override the figure's native width with the width of
-        the parent container. If ``use_container_width`` is ``False``,
-        Streamlit sets the width of the chart to fit its contents
-        according to the plotting library, up to the width of the parent
-        container. If ``use_container_width`` is ``True`` (default), Streamlit
-        sets the width of the figure to match the width of the parent container.
-    key: str or None
-        An optional key that uniquely identifies this component. If this is
-        None, and the component's arguments are changed, the component will
-        be re-mounted in the Streamlit frontend and lose its current state.
-
-    Example
-    -------
-    >>> from streamlit_bokeh import streamlit_bokeh
-    >>> from bokeh.plotting import figure
-    >>>
-    >>> x = [1, 2, 3, 4, 5]
-    >>> y = [6, 7, 2, 4, 5]
-    >>>
-    >>> p = figure(title="simple line example", x_axis_label="x", y_axis_label="y")
-    >>> p.line(x, y, legend_label="Trend", line_width=2)
-    >>>
-    >>> streamlit_bokeh(p, use_container_width=True)
-
-    """
+    """Render a Bokeh chart in Streamlit."""
 
     if bokeh.__version__ != REQUIRED_BOKEH_VERSION:
-        # TODO(ken): Update Error message
         raise Exception(
             f"Streamlit only supports Bokeh version {REQUIRED_BOKEH_VERSION}, "
             f"but you have version {bokeh.__version__} installed. Please "
             f"run `pip install --force-reinstall --no-deps bokeh=="
-            f"{REQUIRED_BOKEH_VERSION}` to install the correct version."
+            f"{REQUIRED_BOKEH_VERSION}`"
         )
 
     if _IS_USING_CCV2:
-        # Call through to our private component function.
         _call_kwargs: dict[str, object] = {
             "key": key,
             "data": {
                 "figure": json.dumps(json_item(figure)),
-                "bokeh_theme": theme,
+
+                # 🔥 FINAL FIX: Disable frontend theme override
+                "bokeh_theme": None,
+
                 "use_container_width": use_container_width,
             },
         }
-        # Streamlit 1.51-1.52 accepts isolate_styles on the returned component
-        # function (it moved to `component(...)` in 1.53).
+
         if not _IS_USING_UPDATED_ISOLATE_STYLES_PARAM:
             _call_kwargs["isolate_styles"] = _ISOLATE_STYLES
 
         _component_func(**_call_kwargs)
-
         return None
+
     else:
-        # Call through to our private component function. Arguments we pass here
-        # will be sent to the frontend, where they'll be available in an "args"
-        # dictionary.
         _component_func(
             figure=json.dumps(json_item(figure)),
             use_container_width=use_container_width,
-            bokeh_theme=theme,
+
+            # 🔥 FINAL FIX HERE ALSO
+            bokeh_theme=None,
+
             key=key,
         )
-
         return None
