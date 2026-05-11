@@ -1,2 +1,3 @@
 recursive-include streamlit_bokeh/frontend/build *
+include streamlit_bokeh/py.typed
 prune streamlit_bokeh/frontend/node_modules
