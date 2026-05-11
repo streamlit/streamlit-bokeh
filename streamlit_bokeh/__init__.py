@@ -15,7 +15,8 @@
 import importlib.metadata
 import json
 import os
-from typing import TYPE_CHECKING
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 import bokeh
 import streamlit as st
@@ -23,7 +24,7 @@ from bokeh.embed import json_item
 from packaging.version import Version
 
 if TYPE_CHECKING:
-    from bokeh.plotting.figure import Figure
+    from bokeh.model import Model
 
 
 # Create a _RELEASE constant. We'll set this to False while we're developing
@@ -47,17 +48,23 @@ _IS_USING_UPDATED_ISOLATE_STYLES_PARAM = Version(_STREAMLIT_VERSION) >= Version(
 )
 
 # Version-gated component registration
+_component_func: Callable[..., Any]
+
 if _IS_USING_CCV2:
-    _component_kwargs: dict[str, object] = {
-        "name": "streamlit-bokeh.streamlit_bokeh",
-        "js": "v2/index-*.mjs",
-        "html": "<div class='stBokehContainer'></div>",
-    }
     # Streamlit 1.53+ accepts isolate_styles in the `component(...)` call.
     if _IS_USING_UPDATED_ISOLATE_STYLES_PARAM:
-        _component_kwargs["isolate_styles"] = _ISOLATE_STYLES
-
-    _component_func = st.components.v2.component(**_component_kwargs)
+        _component_func = st.components.v2.component(
+            name="streamlit-bokeh.streamlit_bokeh",
+            js="v2/index-*.mjs",
+            html="<div class='stBokehContainer'></div>",
+            isolate_styles=_ISOLATE_STYLES,
+        )
+    else:
+        _component_func = st.components.v2.component(
+            name="streamlit-bokeh.streamlit_bokeh",
+            js="v2/index-*.mjs",
+            html="<div class='stBokehContainer'></div>",
+        )
 else:
     if not _RELEASE:
         _component_func = st.components.v1.declare_component(
@@ -77,7 +84,7 @@ REQUIRED_BOKEH_VERSION = "3.9.0"
 
 
 def streamlit_bokeh(
-    figure: "Figure",
+    figure: "Model",
     use_container_width: bool = True,
     theme: str = "streamlit",
     key: str | None = None,
@@ -86,8 +93,8 @@ def streamlit_bokeh(
 
     Parameters
     ----------
-    figure: bokeh.plotting.figure.Figure
-        A Bokeh figure to plot.
+    figure: bokeh.model.Model
+        A Bokeh model, typically a figure, to plot.
     use_container_width : bool
         Whether to override the figure's native width with the width of
         the parent container. If ``use_container_width`` is ``False``,
@@ -126,20 +133,17 @@ def streamlit_bokeh(
 
     if _IS_USING_CCV2:
         # Call through to our private component function.
-        _call_kwargs: dict[str, object] = {
-            "key": key,
-            "data": {
-                "figure": json.dumps(json_item(figure)),
-                "bokeh_theme": theme,
-                "use_container_width": use_container_width,
-            },
+        data = {
+            "figure": json.dumps(json_item(figure)),
+            "bokeh_theme": theme,
+            "use_container_width": use_container_width,
         }
         # Streamlit 1.51-1.52 accepts isolate_styles on the returned component
         # function (it moved to `component(...)` in 1.53).
         if not _IS_USING_UPDATED_ISOLATE_STYLES_PARAM:
-            _call_kwargs["isolate_styles"] = _ISOLATE_STYLES
-
-        _component_func(**_call_kwargs)
+            _component_func(key=key, data=data, isolate_styles=_ISOLATE_STYLES)
+        else:
+            _component_func(key=key, data=data)
 
         return None
     else:
