@@ -38,7 +38,7 @@ IGNORE_PATTERN = re.compile(
     # Exclude files, because they make it obvious which product they relate to.
     r"|(LICENSE|NOTICES|CODE_OF_CONDUCT\.md|README\.md)$"
     # Exclude files, because they do not support comments
-    r"|\.(json|prettierrc|nvmrc)$"
+    r"|\.(json|prettierrc|nvmrc|typed)$"
     # Exclude yarn.lock
     r"|yarn\.lock$"
     # Exclude .yarn folder
