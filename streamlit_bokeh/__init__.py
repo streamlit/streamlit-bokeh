@@ -80,7 +80,7 @@ else:
 
 
 __version__ = importlib.metadata.version("streamlit_bokeh")
-REQUIRED_BOKEH_VERSION = "3.9.0"
+REQUIRED_BOKEH_VERSION = "3.9.1"
 
 
 def streamlit_bokeh(
