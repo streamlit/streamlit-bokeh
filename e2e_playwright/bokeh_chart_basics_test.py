@@ -23,14 +23,18 @@ def test_bokeh_chart(
     themed_app: Page, assert_snapshot: ImageCompareFunction, chart: str, is_v2: bool
 ):
     """Test that st.bokeh_chart renders correctly."""
-    themed_app.get_by_test_id("stSelectbox").locator("input").click()
+    # Open the selectbox and pick a chart via ARIA roles so the selectors
+    # survive Streamlit UI library changes.
+    combobox = themed_app.get_by_test_id("stSelectbox").get_by_role("combobox")
+    combobox.click()
+    expect(combobox).to_have_attribute("aria-expanded", "true")
 
-    # Take a snapshot of the selection dropdown:
-    selection_dropdown = themed_app.locator('[data-baseweb="popover"]').first
-    selection_dropdown.get_by_text(chart).scroll_into_view_if_needed()
-    selection_dropdown.get_by_text(chart).click()
-    # Make sure the dropdown closed before we continue to snapshots.
-    expect(selection_dropdown).to_be_hidden()
+    option = themed_app.get_by_role("option", name=chart, exact=True)
+    option.scroll_into_view_if_needed()
+    option.click()
+
+    # Make sure the dropdown fully closed before we continue to snapshots.
+    expect(combobox).to_have_attribute("aria-expanded", "false")
 
     wait_for_app_run(themed_app)
 
