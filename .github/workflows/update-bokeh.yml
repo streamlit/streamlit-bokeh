@@ -59,6 +59,11 @@ jobs:
         id: create_pr
         uses: peter-evans/create-pull-request@v6
         with:
+          # Pin the commit identity to the Streamlit Bot account. Without this,
+          # the action defaults the author to github.actor, which for a scheduled
+          # run is the last user to have edited the cron schedule.
+          author: "Streamlit Bot <core+streamlitbot-github@streamlit.io>"
+          committer: "Streamlit Bot <core+streamlitbot-github@streamlit.io>"
           branch: "release/${{ steps.compare_bokeh.outputs.new_version }}"
           base: main
           add-paths: "."
