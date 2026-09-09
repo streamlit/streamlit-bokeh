@@ -430,6 +430,31 @@ describe("withUserIntent", () => {
   })
 })
 
+describe("Bokeh theme inventory guard", () => {
+  // `_SUPPORTED_BOKEH_THEMES` in streamlit_bokeh/__init__.py is hand-maintained,
+  // while update-bokeh.yml bumps Bokeh on a schedule and only rewrites
+  // REQUIRED_BOKEH_VERSION. If a BokehJS upgrade adds or renames a theme, the
+  // Python validation would start rejecting a name the frontend can apply, and
+  // the generated release PR would give no signal. This fails instead.
+  test("Python's supported theme list matches the themes BokehJS ships", () => {
+    const source = readFileSync(
+      resolve(__dirname, "../../../__init__.py"),
+      "utf8"
+    )
+    const block = /_SUPPORTED_BOKEH_THEMES = \(([^)]*)\)/.exec(source)
+    expect(block, "could not find _SUPPORTED_BOKEH_THEMES").not.toBeNull()
+
+    const declared = [...block![1].matchAll(/"([^"]+)"/g)].map(m => m[1]).sort()
+
+    const shipped = Object.keys(window.Bokeh.Themes)
+      // Bokeh ships a misspelled alias of "contrast" alongside the real name.
+      .filter(name => name !== "constrast")
+      .sort()
+
+    expect(declared).toEqual(shipped)
+  })
+})
+
 describe("Bokeh property ordering guard", () => {
   // `withUserIntent` reads `dirty` off a group's colour while resolving that
   // group's alpha, so the colour must initialize first. Every Bokeh visual

@@ -126,6 +126,53 @@ describe("setChartThemeGenerator", () => {
     expect(useTheme).toHaveBeenCalledWith(null)
   })
 
+  test("should reinstall its theme on every render, not only on a change", () => {
+    // Bokeh keeps the active theme in one module-level global shared by every
+    // chart on the page (loadBokehGlobally loads Bokeh once per document),
+    // while each component instance has its own currentTheme. Two charts with
+    // different themes therefore fight: on a rerun the first one sees no
+    // change, skips use_theme, and then re-embeds -- with fresh Bokeh ids, so
+    // it always re-embeds -- under whatever theme the second one left behind.
+    const newAppTheme: MinimalStreamlitTheme = {
+      textColor: "white",
+      backgroundColor: "black",
+      secondaryBackgroundColor: "gray",
+      font: "Source Pro",
+    }
+    const chartA = setChartThemeGenerator()
+    const chartB = setChartThemeGenerator()
+
+    chartA("streamlit", newAppTheme)
+    chartB(null, newAppTheme)
+
+    const { use_theme: useTheme } =
+      global.window.Bokeh.require("core/properties")
+    useTheme.mockClear()
+
+    // Rerun: A's theme is unchanged, but the global now holds B's null.
+    chartA("streamlit", newAppTheme)
+    expect(useTheme).toHaveBeenCalled()
+    expect(useTheme.mock.lastCall?.[0]).not.toBeNull()
+  })
+
+  test("keeps following the app theme when the requested name is unavailable", () => {
+    // A name BokehJS doesn't have falls back to the Streamlit theme -- reachable
+    // if bokeh-api-*.min.js fails to load. Caching the requested name instead of
+    // the one in effect would stop later light/dark switches re-applying it.
+    const base = {
+      textColor: "white",
+      backgroundColor: "black",
+      secondaryBackgroundColor: "gray",
+      font: "Source Pro",
+    }
+    const setTheme = setChartThemeGenerator()
+
+    expect(setTheme("nonexistent_theme", base)).toBe(true)
+    expect(
+      setTheme("nonexistent_theme", { ...base, backgroundColor: "white" })
+    ).toBe(true)
+  })
+
   test("should keep the opt-out when switching from a real theme to null", () => {
     const newAppTheme: MinimalStreamlitTheme = {
       textColor: "white",
