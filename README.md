@@ -131,20 +131,42 @@ streamlit_bokeh(YOUR_BOKEH_FIGURE, use_container_width=True, theme="streamlit", 
 
 ## ⚙️ API Reference
 
-### `streamlit_bokeh(figure, use_container_width=False, theme='streamlit', key=None)`
+### `streamlit_bokeh(figure, use_container_width=True, theme='streamlit', key=None)`
 
 #### Parameters:
 
 - **`figure`** (_bokeh.plotting.figure_): The Bokeh figure object to display.
 - **`use_container_width`** (_bool_, optional): Whether to override the figure's native width with the width of the parent container. This is `True` by default.
-- **`theme`** (_str_, optional): The theme for the plot. This can be one of the following strings:
-  - `"streamlit"` (default): Matches Streamlit's current theme.
-  - A Bokeh theme name including:
+- **`theme`** (_str_ or _None_, optional): The theme for the plot. This can be:
+  - `"streamlit"` (default): Matches Streamlit's current theme, including light and dark mode.
+  - One of Bokeh's built-in themes:
     - `"caliber"`
-    - `"light_minimal"`
-    - `"dark_minimal"`
     - `"contrast"`
+    - `"dark_minimal"`
+    - `"light_minimal"`
+    - `"night_sky"`
+  - `None`: Applies no theme, so the figure renders exactly as Bokeh would draw it on its own.
+
+  Any other value raises an error. Note that Bokeh's `"carbon"` theme is not supported: it exists in Bokeh's Python package but is not included in BokehJS, so it cannot be applied in the browser.
+
 - **`key`** (_str_, optional but recommended): An optional string to give this element a stable identity. If this is `None` (default), this element's identity will be determined based on the values of the other parameters.
+
+#### Theming and your own styling
+
+Styling you set on the figure always wins over the theme. A theme only fills in what you left unspecified.
+
+Because Bokeh builds one visual decision out of several properties — a line needs a colour, an alpha and a width to be drawn — setting only a colour used to leave the theme supplying the alpha, which could hide the element you had just styled. Now, styling a colour makes that element render at Bokeh's default opacity instead of the theme's:
+
+```python
+# Renders as fully opaque red, under every theme.
+plot.xaxis.major_tick_line_color = "red"
+
+# Set the matching alpha to control opacity yourself.
+plot.xaxis.major_tick_line_color = "red"
+plot.xaxis.major_tick_line_alpha = 0.25
+```
+
+One case worth knowing: giving a legend a background colour makes it opaque, where the built-in themes otherwise draw it at 25% so the plot shows through. Set `legend.background_fill_alpha` if you want the translucency back.
 
 ---
 
