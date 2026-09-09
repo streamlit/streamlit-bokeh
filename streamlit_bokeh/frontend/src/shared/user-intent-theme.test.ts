@@ -286,6 +286,30 @@ describe("withUserIntent", () => {
     expect(fixed.minor_tick_line_alpha).toBe(0)
   })
 
+  test("keeps an element hidden when the user nulls its colour", () => {
+    // Figures commonly hide an element with `grid_line_color = None` rather
+    // than an alpha. That counts as explicit intent, so the wrapper withholds
+    // the theme's alpha and it resolves to 1 -- but a null colour suppresses
+    // drawing on its own, so the element stays hidden either way. The e2e
+    // corpus relies on this: several of its figures null these exact colours.
+    for (const [type, colorAttr, alphaAttr] of [
+      ["Grid", "grid_line_color", "grid_line_alpha"],
+      ["LinearAxis", "minor_tick_line_color", "minor_tick_line_alpha"],
+      ["Plot", "outline_line_color", "outline_line_alpha"],
+    ]) {
+      const resolved = resolveProps(
+        withUserIntent(streamlitTheme(APP_THEME)),
+        type,
+        { [colorAttr]: null },
+        [colorAttr, alphaAttr]
+      )
+
+      expect(resolved[colorAttr], `${type}.${colorAttr}`).toBeNull()
+      // Bokeh's `doit` is false whenever the colour is null, whatever the alpha.
+      expect(resolved[alphaAttr], `${type}.${alphaAttr}`).toBe(1)
+    }
+  })
+
   test("applies on the real deserializer path, not just direct construction", () => {
     // `embed_item` reaches models through the deserializer, which constructs
     // with `{id}` only -- skipping the constructor's `initialize_props` -- and
