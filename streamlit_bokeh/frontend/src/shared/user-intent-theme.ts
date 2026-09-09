@@ -53,11 +53,32 @@
  */
 
 /**
- * Bokeh's visual property groups. Each is a colour plus an alpha (plus other
- * members we don't care about), mixed into models under a prefix -- hence
+ * The visual groups this rule applies to.
+ *
+ * Bokeh's visual properties come in groups -- line, fill, text, hatch -- each a
+ * colour plus an alpha, mixed into models under a prefix, hence
  * `major_tick_line_color`, `axis_label_text_color`, `background_fill_color`.
+ * The rule deliberately covers **only** the line group.
+ *
+ * Lines are binary: an axis tick at 0.25 alpha is just a fainter tick, so
+ * honouring the colour and dropping the theme's alpha can only make the user's
+ * intent more visible. Fills are not, because a theme's fill alpha can be doing
+ * *contrast* work rather than decoration. `Legend.background_fill_alpha: 0.25`
+ * is the case that proves it: the Streamlit theme pairs it with a label colour
+ * taken from the app's text colour, so a figure that sets only
+ * `legend.background_fill_color` to something light gets a translucent panel in
+ * dark mode. Make that opaque and the light label text sitting on top of it
+ * disappears. `e2e_playwright/bokeh_chart_basics.py`'s `vstack_line` case does
+ * exactly this, and covering fills made its legend unreadable.
+ *
+ * Text and hatch are excluded for the same reason rather than on evidence: no
+ * shipped theme sets `*_text_alpha` or `*_hatch_alpha` at all, so including
+ * them would buy nothing today while carrying the same risk.
+ *
+ * Adding a group back is a one-line change, but it needs the e2e snapshots
+ * re-checked for exactly this class of interaction.
  */
-const INTENT_GROUPS = ["line", "fill", "text", "hatch"] as const
+const INTENT_GROUPS = ["line"] as const
 
 /** The minimum of Bokeh's Theme surface that BokehJS actually consumes. */
 export interface BokehThemeLike {
@@ -70,7 +91,8 @@ export interface BokehThemeLike {
  * null when `attr` is not a group alpha.
  *
  * Handles both prefixed and bare forms: `major_tick_line_alpha` ->
- * `major_tick_line_color`, and `line_alpha` -> `line_color`.
+ * `major_tick_line_color`, and `line_alpha` -> `line_color`. Returns null for
+ * groups outside `INTENT_GROUPS`, so a fill or text alpha is left to the theme.
  */
 export function governingColorAttr(attr: string): string | null {
   for (const group of INTENT_GROUPS) {

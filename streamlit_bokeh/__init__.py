@@ -157,10 +157,11 @@ def streamlit_bokeh(
           would draw it on its own.
 
         Styling you set on the figure always takes precedence over the theme.
-        A theme only fills in what you left unspecified, so setting a colour
-        makes that element render at Bokeh's default opacity rather than the
-        theme's. Set the matching ``*_alpha`` property to control opacity
-        yourself.
+        A theme only fills in what you left unspecified, so setting a *line*
+        colour makes that line render at Bokeh's default opacity rather than
+        the theme's. Set the matching ``*_line_alpha`` property to control
+        opacity yourself. Fill, text and hatch opacity is left to the theme,
+        since a theme's fill opacity can be keeping text above it readable.
     key: str or None
         An optional key that uniquely identifies this component. If this is
         None, and the component's arguments are changed, the component will

@@ -155,7 +155,7 @@ streamlit_bokeh(YOUR_BOKEH_FIGURE, use_container_width=True, theme="streamlit", 
 
 Styling you set on the figure always wins over the theme. A theme only fills in what you left unspecified.
 
-Because Bokeh builds one visual decision out of several properties — a line needs a colour, an alpha and a width to be drawn — setting only a colour used to leave the theme supplying the alpha, which could hide the element you had just styled. Now, styling a colour makes that element render at Bokeh's default opacity instead of the theme's:
+Because Bokeh builds one visual decision out of several properties — a line needs a colour, an alpha and a width to be drawn — setting only a colour used to leave the theme supplying the alpha, which could hide the element you had just styled. Setting a **line** colour now makes that line render at Bokeh's default opacity instead of the theme's:
 
 ```python
 # Renders as fully opaque red, under every theme.
@@ -166,7 +166,7 @@ plot.xaxis.major_tick_line_color = "red"
 plot.xaxis.major_tick_line_alpha = 0.25
 ```
 
-One case worth knowing: giving a legend a background colour makes it opaque, where the built-in themes otherwise draw it at 25% so the plot shows through. Set `legend.background_fill_alpha` if you want the translucency back.
+This applies to line properties only — ticks, axis lines, grid lines, outlines, borders. Fill, text and hatch opacity is still left to the theme, because a theme's fill opacity can be keeping text on top of it readable. If you set `legend.background_fill_color`, for example, the theme keeps the background translucent; set `legend.background_fill_alpha` yourself if you want it opaque.
 
 ---
 

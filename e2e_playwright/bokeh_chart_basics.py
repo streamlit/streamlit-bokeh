@@ -314,8 +314,9 @@ elif chart == "themed_user_styling":
 
     # Dimmed to 0.25 by the theme rather than hidden.
     p.xgrid.grid_line_color = "crimson"
-    # The one case where honouring the colour visibly changes an existing look:
-    # the theme draws legend backgrounds at 25% so the plot shows through.
+    # Deliberately unaffected: the rule covers only line properties, so the
+    # theme keeps dimming legend backgrounds to 0.25. See INTENT_GROUPS in
+    # frontend/src/shared/user-intent-theme.ts.
     p.legend.background_fill_color = "navy"
 
 streamlit_bokeh(p, use_container_width=False, theme=theme, key="chart_1")

@@ -115,15 +115,8 @@ describe("governingColorAttr", () => {
     ["bar_line_alpha", "bar_line_color"],
     ["outline_line_alpha", "outline_line_color"],
     ["grid_line_alpha", "grid_line_color"],
-    ["background_fill_alpha", "background_fill_color"],
-    ["item_background_fill_alpha", "item_background_fill_color"],
-    ["inactive_fill_alpha", "inactive_fill_color"],
-    ["axis_label_text_alpha", "axis_label_text_color"],
-    ["hatch_alpha", "hatch_color"],
-    // Bare, unprefixed group members (glyph visuals).
+    // Bare, unprefixed group member (glyph visuals).
     ["line_alpha", "line_color"],
-    ["fill_alpha", "fill_color"],
-    ["text_alpha", "text_color"],
   ])("maps %s to %s", (alphaAttr, colorAttr) => {
     expect(governingColorAttr(alphaAttr)).toBe(colorAttr)
   })
@@ -136,6 +129,15 @@ describe("governingColorAttr", () => {
     "spacing",
     // Ends with "line_alpha" but not on a group boundary.
     "nonline_alpha",
+    // Non-line groups are deliberately left to the theme: a theme's fill alpha
+    // can be doing contrast work. See INTENT_GROUPS.
+    "background_fill_alpha",
+    "item_background_fill_alpha",
+    "inactive_fill_alpha",
+    "axis_label_text_alpha",
+    "hatch_alpha",
+    "fill_alpha",
+    "text_alpha",
   ])("returns null for %s", attr => {
     expect(governingColorAttr(attr)).toBeNull()
   })
@@ -234,10 +236,10 @@ describe("withUserIntent", () => {
   })
 
   test("falls back to Bokeh's own defaults, not to 1", () => {
-    // Legend overrides its inherited alphas, so this pins that the fallback is
-    // the class default rather than a hardcoded value.
-    const keys = ["background_fill_alpha", "border_line_alpha"]
-    const userAttrs = { background_fill_color: "navy" }
+    // Legend overrides its inherited border alpha to 0.5, so this pins that the
+    // fallback is the class default rather than a hardcoded 1.
+    const keys = ["border_line_alpha"]
+    const userAttrs = { border_line_color: "navy" }
 
     expect(
       resolveProps(
@@ -245,12 +247,35 @@ describe("withUserIntent", () => {
         "Legend",
         userAttrs,
         keys
-      ).background_fill_alpha
-    ).toBe(resolveProps(null, "Legend", userAttrs, keys).background_fill_alpha)
+      ).border_line_alpha
+    ).toBe(resolveProps(null, "Legend", userAttrs, keys).border_line_alpha)
 
     expect(
-      resolveProps(null, "Legend", userAttrs, keys).background_fill_alpha
-    ).toBe(0.95)
+      resolveProps(null, "Legend", userAttrs, keys).border_line_alpha
+    ).toBe(0.5)
+  })
+
+  test("leaves a legend background alone even when its colour is set", () => {
+    // The regression that scoped INTENT_GROUPS to lines: the Streamlit theme
+    // dims legend backgrounds to 0.25 and draws labels in the app's text
+    // colour, so opening this up made light-background legends unreadable in
+    // dark mode.
+    const userAttrs = { background_fill_color: "#fafafa" }
+    const keys = ["background_fill_color", "background_fill_alpha"]
+
+    for (const theme of [
+      streamlitTheme(APP_THEME),
+      window.Bokeh.Themes.dark_minimal,
+    ]) {
+      const resolved = resolveProps(
+        withUserIntent(theme),
+        "Legend",
+        userAttrs,
+        keys
+      )
+      expect(resolved.background_fill_color).toBe("#fafafa")
+      expect(resolved.background_fill_alpha).toBe(0.25)
+    }
   })
 
   test("composes with the Streamlit theme", () => {
@@ -396,6 +421,6 @@ describe("Bokeh property ordering guard", () => {
 
     expect(violations).toEqual([])
     // Guards against the enumeration silently finding nothing.
-    expect(pairs).toBeGreaterThanOrEqual(30)
+    expect(pairs).toBeGreaterThanOrEqual(10)
   })
 })
