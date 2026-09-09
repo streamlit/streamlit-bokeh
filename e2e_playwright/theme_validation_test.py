@@ -34,6 +34,17 @@ from streamlit.errors import StreamlitAPIException
 _REPO_ROOT = Path(__file__).parent.parent
 
 
+@pytest.fixture(scope="module", autouse=True)
+def app_server() -> None:
+    """Skip starting a Streamlit app for this module.
+
+    Overrides conftest's autouse `app_server`, which resolves a test module to a
+    sibling script and runs it -- `theme_validation.py` here, which does not
+    exist. These tests call the Python API directly and need no app or browser.
+    """
+    return None
+
+
 @pytest.mark.parametrize(
     "theme",
     [
