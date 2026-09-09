@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { MessageChannel } from "node:worker_threads"
 
@@ -30,7 +30,22 @@ import { governingColorAttr, withUserIntent } from "./user-intent-theme"
 // with null" would pass whether or not the fix works. Loading the bundle costs
 // well under a second and tests the mechanism that actually ships.
 const BOKEH_DIR = resolve(__dirname, "../../public/bokeh")
-const BOKEH_BUNDLES = ["bokeh-3.10.0.min.js", "bokeh-api-3.10.0.min.js"]
+
+// Discovered rather than hardcoded. `scripts/update_bokeh_version.py` deletes
+// every *bokeh*.js in this directory before downloading the new version and does
+// not rewrite this file, so a pinned filename would make the whole suite die
+// with ENOENT on the next automated Bokeh bump -- masking the very guards below
+// that exist to catch that bump.
+const bundleFor = (prefix: string): string => {
+  const match = readdirSync(BOKEH_DIR).find(
+    name => name.startsWith(prefix) && name.endsWith(".min.js")
+  )
+  if (match === undefined) {
+    throw new Error(`No ${prefix}*.min.js in ${BOKEH_DIR}`)
+  }
+  return match
+}
+const BOKEH_BUNDLES = [bundleFor("bokeh-3"), bundleFor("bokeh-api-")]
 
 /** Model types the Streamlit theme and Bokeh's built-in themes both style. */
 const THEMED_MODELS = [

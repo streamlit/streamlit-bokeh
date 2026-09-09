@@ -62,7 +62,7 @@ describe("setChartThemeGenerator", () => {
   let setChartTheme: (
     newTheme: string | null,
     newAppTheme: MinimalStreamlitTheme
-  ) => boolean
+  ) => { themeChanged: boolean; theme: unknown }
 
   beforeEach(() => {
     setChartTheme = setChartThemeGenerator()
@@ -76,15 +76,13 @@ describe("setChartThemeGenerator", () => {
       secondaryBackgroundColor: "gray",
       font: "Source Pro",
     }
-    const result = setChartTheme(newTheme, newAppTheme)
-    const { use_theme: useTheme } =
-      global.window.Bokeh.require("core/properties")
+    const { themeChanged, theme } = setChartTheme(newTheme, newAppTheme)
 
-    expect(result).toBe(true)
-    expect(useTheme).toHaveBeenCalled()
+    expect(themeChanged).toBe(true)
+    expect(theme).not.toBeNull()
   })
 
-  test("should not reapply the theme if it's the same", () => {
+  test("reports no change when the theme and app theme are unchanged", () => {
     const newTheme = "dark"
     const newAppTheme: MinimalStreamlitTheme = {
       textColor: "white",
@@ -93,9 +91,9 @@ describe("setChartThemeGenerator", () => {
       font: "Source Pro",
     }
     setChartTheme(newTheme, newAppTheme)
-    const result = setChartTheme(newTheme, newAppTheme)
+    const { themeChanged } = setChartTheme(newTheme, newAppTheme)
 
-    expect(result).toBe(false)
+    expect(themeChanged).toBe(false)
   })
 
   test("should apply Streamlit theme when appropriate", () => {
@@ -106,9 +104,9 @@ describe("setChartThemeGenerator", () => {
       secondaryBackgroundColor: "gray",
       font: "Source Pro",
     }
-    const result = setChartTheme(newTheme, newAppTheme)
+    const { themeChanged } = setChartTheme(newTheme, newAppTheme)
 
-    expect(result).toBe(true)
+    expect(themeChanged).toBe(true)
   })
 
   test("should install no theme at all when the theme is null", () => {
@@ -118,41 +116,52 @@ describe("setChartThemeGenerator", () => {
       secondaryBackgroundColor: "gray",
       font: "Source Pro",
     }
-    const { use_theme: useTheme } =
-      global.window.Bokeh.require("core/properties")
-    useTheme.mockClear()
+    const { themeChanged, theme } = setChartTheme(null, newAppTheme)
 
-    expect(setChartTheme(null, newAppTheme)).toBe(true)
-    expect(useTheme).toHaveBeenCalledWith(null)
+    expect(themeChanged).toBe(true)
+    expect(theme).toBeNull()
   })
 
-  test("should reinstall its theme on every render, not only on a change", () => {
-    // Bokeh keeps the active theme in one module-level global shared by every
-    // chart on the page (loadBokehGlobally loads Bokeh once per document),
-    // while each component instance has its own currentTheme. Two charts with
-    // different themes therefore fight: on a rerun the first one sees no
-    // change, skips use_theme, and then re-embeds -- with fresh Bokeh ids, so
-    // it always re-embeds -- under whatever theme the second one left behind.
-    const newAppTheme: MinimalStreamlitTheme = {
+  test("resolves a theme without touching Bokeh's page-global theme slot", () => {
+    // Resolution must be side-effect free. Bokeh keeps the active theme in one
+    // page-global slot, so writing it on a render that is not about to embed can
+    // replace the theme a sibling chart's in-flight embed is waiting to read.
+    // index.ts installs the returned theme immediately before `embed_item`.
+    const base = {
       textColor: "white",
       backgroundColor: "black",
       secondaryBackgroundColor: "gray",
       font: "Source Pro",
     }
-    const chartA = setChartThemeGenerator()
-    const chartB = setChartThemeGenerator()
-
-    chartA("streamlit", newAppTheme)
-    chartB(null, newAppTheme)
-
     const { use_theme: useTheme } =
       global.window.Bokeh.require("core/properties")
     useTheme.mockClear()
 
-    // Rerun: A's theme is unchanged, but the global now holds B's null.
-    chartA("streamlit", newAppTheme)
-    expect(useTheme).toHaveBeenCalled()
-    expect(useTheme.mock.lastCall?.[0]).not.toBeNull()
+    setChartTheme("streamlit", base)
+
+    expect(useTheme).not.toHaveBeenCalled()
+  })
+
+  test("keeps returning its own theme when nothing changed", () => {
+    // A rerun re-embeds regardless, because each script run gives Bokeh fresh
+    // element ids, so an unchanged render still has to hand back the theme it
+    // wants installed -- otherwise it embeds under whatever a sibling chart with
+    // a different theme left in the global slot.
+    const base = {
+      textColor: "white",
+      backgroundColor: "black",
+      secondaryBackgroundColor: "gray",
+      font: "Source Pro",
+    }
+    const setTheme = setChartThemeGenerator()
+
+    const first = setTheme("streamlit", base)
+    const second = setTheme("streamlit", base)
+
+    expect(first.themeChanged).toBe(true)
+    expect(second.themeChanged).toBe(false)
+    // Unchanged, but still a real theme rather than null.
+    expect(second.theme).not.toBeNull()
   })
 
   test("keeps following the app theme when the requested name is unavailable", () => {
@@ -167,9 +176,10 @@ describe("setChartThemeGenerator", () => {
     }
     const setTheme = setChartThemeGenerator()
 
-    expect(setTheme("nonexistent_theme", base)).toBe(true)
+    expect(setTheme("nonexistent_theme", base).themeChanged).toBe(true)
     expect(
       setTheme("nonexistent_theme", { ...base, backgroundColor: "white" })
+        .themeChanged
     ).toBe(true)
   })
 
@@ -182,15 +192,13 @@ describe("setChartThemeGenerator", () => {
     }
     setChartTheme("caliber", newAppTheme)
 
-    const { use_theme: useTheme } =
-      global.window.Bokeh.require("core/properties")
-    useTheme.mockClear()
+    // This previously resolved to the *Streamlit* theme: `null in Bokeh.Themes`
+    // coerces to the string "null", which is not a key, so the lookup missed and
+    // fell through to the Streamlit branch.
+    const { themeChanged, theme } = setChartTheme(null, newAppTheme)
 
-    // This previously applied the *Streamlit* theme: `null in Bokeh.Themes`
-    // coerces to the string "null", which is not a key, so the lookup missed
-    // and fell through to the Streamlit branch.
-    expect(setChartTheme(null, newAppTheme)).toBe(true)
-    expect(useTheme).toHaveBeenCalledWith(null)
+    expect(themeChanged).toBe(true)
+    expect(theme).toBeNull()
   })
 })
 
