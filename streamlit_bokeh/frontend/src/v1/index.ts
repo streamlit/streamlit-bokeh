@@ -59,10 +59,12 @@ export const getChartDataGenerator = () => {
 const getChartData = getChartDataGenerator()
 
 export const setChartThemeGenerator = () => {
-  let currentTheme: string | null = null
+  // `undefined` means "nothing installed yet", which has to stay distinct from
+  // `null`, the caller explicitly asking for no theme at all.
+  let currentTheme: string | null | undefined = undefined
   let appTheme: string | null = null
 
-  return (newTheme: string, newAppTheme: Theme) => {
+  return (newTheme: string | null, newAppTheme: Theme) => {
     let themeChanged = false
     const renderedAppTheme = JSON.stringify(newAppTheme)
 
@@ -81,14 +83,22 @@ export const setChartThemeGenerator = () => {
       // them being absent rather than throwing on the `in` check.
       const builtInThemes = window.Bokeh.Themes ?? {}
 
-      const theme =
-        currentTheme === "streamlit" || !(currentTheme in builtInThemes)
-          ? streamlitTheme(newAppTheme)
-          : builtInThemes[currentTheme]
+      if (newTheme === null) {
+        // Explicit opt-out. Still worth installing rather than skipping:
+        // Bokeh's `use_theme` is a module global, so another chart on the page
+        // may have left its theme behind.
+        use_theme(null)
+      } else {
+        const theme =
+          newTheme === "streamlit" || !(newTheme in builtInThemes)
+            ? streamlitTheme(newAppTheme)
+            : builtInThemes[newTheme]
 
-      // Wrapped so the theme can't suppress a visual whose colour the user set
-      // explicitly. See shared/user-intent-theme.ts.
-      use_theme(withUserIntent(theme))
+        // Wrapped so the theme can't suppress a visual whose colour the user
+        // set explicitly. See shared/user-intent-theme.ts.
+        use_theme(withUserIntent(theme))
+      }
+
       // Previously left unset on the built-in-theme path, so switching between
       // two built-in themes installed the theme but never re-embedded the chart.
       themeChanged = true
@@ -157,7 +167,7 @@ async function updateChart(data: any, useContainerWidth: boolean = false) {
 interface ComponentData {
   figure: string
   use_container_width: boolean
-  bokeh_theme: string
+  bokeh_theme: string | null
 }
 
 /**

@@ -59,7 +59,7 @@ describe("getChartDataGenerator", () => {
 
 // Unit tests for setChartThemeGenerator
 describe("setChartThemeGenerator", () => {
-  let setChartTheme: (newTheme: string, newAppTheme: Theme) => boolean
+  let setChartTheme: (newTheme: string | null, newAppTheme: Theme) => boolean
 
   beforeEach(() => {
     setChartTheme = setChartThemeGenerator()
@@ -118,6 +118,39 @@ describe("setChartThemeGenerator", () => {
 
     expect(setChartTheme("caliber", newAppTheme)).toBe(true)
     expect(setChartTheme("dark_minimal", newAppTheme)).toBe(true)
+  })
+
+  test("should install no theme at all when the theme is null", () => {
+    const newAppTheme = {
+      textColor: "white",
+      backgroundColor: "black",
+      secondaryBackgroundColor: "gray",
+    } as Theme
+    const { use_theme: useTheme } =
+      global.window.Bokeh.require("core/properties")
+    useTheme.mockClear()
+
+    expect(setChartTheme(null, newAppTheme)).toBe(true)
+    expect(useTheme).toHaveBeenCalledWith(null)
+  })
+
+  test("should keep the opt-out when switching from a real theme to null", () => {
+    const newAppTheme = {
+      textColor: "white",
+      backgroundColor: "black",
+      secondaryBackgroundColor: "gray",
+    } as Theme
+    setChartTheme("caliber", newAppTheme)
+
+    const { use_theme: useTheme } =
+      global.window.Bokeh.require("core/properties")
+    useTheme.mockClear()
+
+    // This previously applied the *Streamlit* theme: `null in Bokeh.Themes`
+    // coerces to the string "null", which is not a key, so the lookup missed
+    // and fell through to the Streamlit branch.
+    expect(setChartTheme(null, newAppTheme)).toBe(true)
+    expect(useTheme).toHaveBeenCalledWith(null)
   })
 })
 
