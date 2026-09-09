@@ -61,7 +61,7 @@ export const getChartDataGenerator = () => {
 
 export const setChartThemeGenerator = () => {
   // The theme currently in effect for this instance. `undefined` means nothing
-  // has been resolved yet, which has to stay distinct from `null`, the caller
+  // has been installed yet, which has to stay distinct from `null`, the caller
   // explicitly asking for no theme at all.
   let currentTheme: string | null | undefined = undefined
   let appTheme: string | null = null
@@ -73,10 +73,10 @@ export const setChartThemeGenerator = () => {
     // being absent rather than throwing on the `in` check.
     const builtInThemes = window.Bokeh.Themes ?? {}
 
-    // A name BokehJS lacks falls back to the Streamlit theme. Tracking what
-    // took effect rather than what was asked for keeps the change detection
-    // honest: caching an unavailable name would stop the Streamlit theme from
-    // following later light/dark switches.
+    // A name BokehJS lacks falls back to the Streamlit theme. Tracking what took
+    // effect rather than what was asked for keeps the change detection honest:
+    // caching an unavailable name would stop the Streamlit theme from following
+    // later light/dark switches.
     const resolvedTheme =
       newTheme === null || newTheme in builtInThemes ? newTheme : "streamlit"
 
@@ -85,30 +85,31 @@ export const setChartThemeGenerator = () => {
       resolvedTheme !== currentTheme ||
       (currentTheme === "streamlit" && appTheme !== renderedAppTheme)
 
-    currentTheme = resolvedTheme
-    appTheme = renderedAppTheme
+    if (themeChanged) {
+      currentTheme = resolvedTheme
+      appTheme = renderedAppTheme
 
-    // NOTE: deliberately does not install the theme. Bokeh keeps the active
-    // theme in one page-global `use_theme` slot, so writing it on a render that
-    // is not about to embed can replace the theme a *sibling* chart's in-flight
-    // embed is waiting to read. The caller installs this immediately before
-    // `embed_item` instead, so the global is only touched when it is used.
-    //
-    // That narrows the hazard without removing it: `embed_item` does
-    // `await defer()` before deserializing, a real macrotask yield, so with two
-    // instances rendering concurrently a sibling can still replace the global in
-    // between. Nothing in this layer can make install-then-embed atomic; the
-    // page-global theme is the underlying problem and is tracked separately.
-    let theme: unknown = null
-    if (resolvedTheme === "streamlit") {
-      // Wrapped so the theme cannot suppress a visual whose colour the user set
-      // explicitly. See shared/user-intent-theme.ts.
-      theme = withUserIntent(streamlitTheme(newAppTheme))
-    } else if (resolvedTheme !== null) {
-      theme = withUserIntent(builtInThemes[resolvedTheme])
+      // NOTE: Bokeh keeps the active theme in one page-global slot while theme
+      // choice is per-instance, so two charts with different themes can still
+      // interfere. That is pre-existing and untouched here -- and unfixable in
+      // this layer, since `embed_item` yields at `await defer()` before it
+      // deserializes, so no arrangement of these calls makes install-then-embed
+      // atomic. It needs the theme applied in Python with `use_theme(null)` in
+      // the frontend, which is its own change.
+      const { use_theme } = window.Bokeh.require("core/properties")
+
+      if (resolvedTheme === null) {
+        use_theme(null)
+      } else if (resolvedTheme === "streamlit") {
+        // Wrapped so the theme cannot suppress a visual whose colour the user
+        // set explicitly. See shared/user-intent-theme.ts.
+        use_theme(withUserIntent(streamlitTheme(newAppTheme)))
+      } else {
+        use_theme(withUserIntent(builtInThemes[resolvedTheme]))
+      }
     }
 
-    return { themeChanged, theme }
+    return themeChanged
   }
 }
 
@@ -144,8 +145,7 @@ async function updateChart(
   useContainerWidth: boolean = false,
   chart: HTMLDivElement,
   parentElement: HTMLElement,
-  key: string,
-  theme: unknown
+  key: string
 ) {
   /**
    * When you create a bokeh chart in your python script, you can specify
@@ -174,12 +174,6 @@ async function updateChart(
   }
 
   removeAllChildNodes(chart)
-
-  // Installed here rather than while resolving, so the page-global theme slot is
-  // only written when a chart is actually about to be embedded.
-  const { use_theme } = window.Bokeh.require("core/properties")
-  use_theme(theme)
-
   await window.Bokeh.embed.embed_item(data, key)
 }
 
@@ -272,7 +266,7 @@ const bokehComponent = async (component: ComponentArgs<{}, ComponentData>) => {
   const chart = getOrCreateChart(container, key)
 
   const { data: chartData, hasChanged } = getChartData(figure)
-  const { themeChanged, theme } = setChartTheme(bokehTheme, {
+  const themeChanged = setChartTheme(bokehTheme, {
     backgroundColor: getCssPropertyValue("--st-background-color", container),
     secondaryBackgroundColor: getCssPropertyValue(
       "--st-secondary-background-color",
@@ -287,14 +281,7 @@ const bokehComponent = async (component: ComponentArgs<{}, ComponentData>) => {
   // The only exception would be if the same info is sent down from the frontend
   // only. It shouldn't happen, but it's a safeguard.
   if (hasChanged || themeChanged) {
-    await updateChart(
-      chartData,
-      useContainerWidth,
-      chart,
-      container,
-      key,
-      theme
-    )
+    await updateChart(chartData, useContainerWidth, chart, container, key)
   }
 
   return () => {

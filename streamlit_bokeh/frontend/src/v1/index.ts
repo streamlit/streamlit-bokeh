@@ -60,7 +60,7 @@ const getChartData = getChartDataGenerator()
 
 export const setChartThemeGenerator = () => {
   // The theme currently in effect for this instance. `undefined` means nothing
-  // has been resolved yet, which has to stay distinct from `null`, the caller
+  // has been installed yet, which has to stay distinct from `null`, the caller
   // explicitly asking for no theme at all.
   let currentTheme: string | null | undefined = undefined
   let appTheme: string | null = null
@@ -72,10 +72,10 @@ export const setChartThemeGenerator = () => {
     // being absent rather than throwing on the `in` check.
     const builtInThemes = window.Bokeh.Themes ?? {}
 
-    // A name BokehJS lacks falls back to the Streamlit theme. Tracking what
-    // took effect rather than what was asked for keeps the change detection
-    // honest: caching an unavailable name would stop the Streamlit theme from
-    // following later light/dark switches.
+    // A name BokehJS lacks falls back to the Streamlit theme. Tracking what took
+    // effect rather than what was asked for keeps the change detection honest:
+    // caching an unavailable name would stop the Streamlit theme from following
+    // later light/dark switches.
     const resolvedTheme =
       newTheme === null || newTheme in builtInThemes ? newTheme : "streamlit"
 
@@ -84,24 +84,26 @@ export const setChartThemeGenerator = () => {
       resolvedTheme !== currentTheme ||
       (currentTheme === "streamlit" && appTheme !== renderedAppTheme)
 
-    currentTheme = resolvedTheme
-    appTheme = renderedAppTheme
+    if (themeChanged) {
+      currentTheme = resolvedTheme
+      appTheme = renderedAppTheme
 
-    // NOTE: deliberately does not install the theme; the caller does that
-    // immediately before `embed_item`, so the page-global `use_theme` slot is
-    // only written when it is about to be read. v1 renders one chart per iframe
-    // with its own `window.Bokeh`, so there is no sibling to collide with here --
-    // this mirrors v2, where there is.
-    let theme: unknown = null
-    if (resolvedTheme === "streamlit") {
-      // Wrapped so the theme cannot suppress a visual whose colour the user set
-      // explicitly. See shared/user-intent-theme.ts.
-      theme = withUserIntent(streamlitTheme(newAppTheme))
-    } else if (resolvedTheme !== null) {
-      theme = withUserIntent(builtInThemes[resolvedTheme])
+      // v1 renders one chart per iframe with its own `window.Bokeh`, so there is
+      // no sibling instance to collide with here.
+      const { use_theme } = window.Bokeh.require("core/properties")
+
+      if (resolvedTheme === null) {
+        use_theme(null)
+      } else if (resolvedTheme === "streamlit") {
+        // Wrapped so the theme cannot suppress a visual whose colour the user
+        // set explicitly. See shared/user-intent-theme.ts.
+        use_theme(withUserIntent(streamlitTheme(newAppTheme)))
+      } else {
+        use_theme(withUserIntent(builtInThemes[resolvedTheme]))
+      }
     }
 
-    return { themeChanged, theme }
+    return themeChanged
   }
 }
 const setChartTheme = setChartThemeGenerator()
@@ -132,11 +134,7 @@ function removeAllChildNodes(element: Node): void {
   }
 }
 
-async function updateChart(
-  data: any,
-  useContainerWidth: boolean = false,
-  theme: unknown = null
-) {
+async function updateChart(data: any, useContainerWidth: boolean = false) {
   /**
    * When you create a bokeh chart in your python script, you can specify
    * the width: p = figure(title="simple line example", x_axis_label="x", y_axis_label="y", plot_width=200);
@@ -161,11 +159,6 @@ async function updateChart(
 
   if (chart !== null) {
     removeAllChildNodes(chart)
-
-    // Installed here rather than while resolving, mirroring v2.
-    const { use_theme } = window.Bokeh.require("core/properties")
-    use_theme(theme)
-
     await window.Bokeh.embed.embed_item(data, "stBokehChart")
   }
 }
@@ -192,17 +185,14 @@ async function onRender(event: Event): Promise<void> {
   } = renderData.args
 
   const { data: chartData, hasChanged } = getChartData(figure)
-  const { themeChanged, theme } = setChartTheme(
-    bokehTheme,
-    renderData.theme as Theme
-  )
+  const themeChanged = setChartTheme(bokehTheme, renderData.theme as Theme)
 
   // NOTE: Each script run forces Bokeh to provide different ids for their
   // elements. For that reason, this will always update the chart.
   // The only exception would be if the same info is sent down from the frontend
   // only. It shouldn't happen, but it's a safeguard.
   if (hasChanged || themeChanged) {
-    await updateChart(chartData, useContainerWidth, theme)
+    await updateChart(chartData, useContainerWidth)
   }
 
   // The UI may change dimensions so we should ensure the iframe is the proper height
