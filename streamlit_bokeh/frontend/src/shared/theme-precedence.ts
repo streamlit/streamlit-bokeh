@@ -48,7 +48,7 @@
  *     for values a theme supplied -- so it is a true record of user intent.
  *  2. A group's colour property initializes before its alpha property, because
  *     every Bokeh visual mixin declares colour first and that order survives
- *     into `HasProps.initialize_props`. `user-intent-theme.test.ts` guards this
+ *     into `HasProps.initialize_props`. `theme-precedence.test.ts` guards this
  *     against Bokeh upgrades; `update-bokeh.yml` bumps Bokeh automatically, so
  *     a reordering must fail loudly rather than silently restore the bug.
  */

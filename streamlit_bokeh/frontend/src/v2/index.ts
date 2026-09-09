@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { withUserIntent } from "../shared/user-intent-theme"
+import { withUserIntent } from "../shared/theme-precedence"
 import { MinimalStreamlitTheme, streamlitTheme } from "./streamlit-theme"
 
 import {
@@ -102,7 +102,7 @@ export const setChartThemeGenerator = () => {
         use_theme(null)
       } else if (resolvedTheme === "streamlit") {
         // Wrapped so the theme cannot suppress a visual whose colour the user
-        // set explicitly. See shared/user-intent-theme.ts.
+        // set explicitly. See shared/theme-precedence.ts.
         use_theme(withUserIntent(streamlitTheme(newAppTheme)))
       } else {
         use_theme(withUserIntent(builtInThemes[resolvedTheme]))

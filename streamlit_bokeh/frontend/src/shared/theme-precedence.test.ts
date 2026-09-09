@@ -21,7 +21,7 @@ import { MessageChannel } from "node:worker_threads"
 import { beforeAll, describe, expect, test } from "vitest"
 
 import { streamlitTheme } from "../v2/streamlit-theme"
-import { governingColorAttr, withUserIntent } from "./user-intent-theme"
+import { governingColorAttr, withUserIntent } from "./theme-precedence"
 
 // These tests run against the real Bokeh bundle we ship rather than a mock.
 // `setupTests.js` stubs `window.Bokeh.Themes` with nulls and never defines
