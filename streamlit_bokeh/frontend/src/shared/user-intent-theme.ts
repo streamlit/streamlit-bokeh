@@ -33,13 +33,14 @@
  * `dark_minimal`, `light_minimal`, `contrast` and `night_sky` hide ticks and
  * axis lines outright with 0.
  *
- * So: when the user has explicitly styled a group's colour, withhold the
- * theme's opinion about that group's alpha and let Bokeh's own default apply.
- * That lands on exactly what an unthemed figure renders, which is the
- * behaviour the removed `st.bokeh_chart` had by applying no theme at all. It
- * also matches how Streamlit themes its other charts -- `ArrowVegaLiteChart`
- * merges the user's config over the Streamlit theme, to "fill in theme
- * defaults where the user didn't specify config options".
+ * So: when the user has explicitly styled a *line* colour, withhold the theme's
+ * opinion about that line's alpha and let Bokeh's own default apply. That lands
+ * on exactly what an unthemed figure renders, which is the behaviour the removed
+ * `st.bokeh_chart` had by applying no theme at all. It also matches how
+ * Streamlit themes its other charts -- `ArrowVegaLiteChart` merges the user's
+ * config over the Streamlit theme, to "fill in theme defaults where the user
+ * didn't specify config options". `INTENT_GROUPS` below covers why this is
+ * limited to lines.
  *
  * Two properties of the mechanism this relies on:
  *

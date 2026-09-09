@@ -335,6 +335,49 @@ describe("withUserIntent", () => {
     }
   })
 
+  test("restores the reporter's baseline in streamlit/streamlit#11346", () => {
+    // Their figure styles three axes under `caliber` and compares against
+    // st.bokeh_chart, which applied no theme at all. Verified against the full
+    // figure via the real deserializer: of the 36 properties they set, the only
+    // ones caliber altered were these two tick alphas, and the fix leaves zero
+    // differences from the unthemed baseline.
+    const reporterAttrs = {
+      axis_line_color: "lightsteelblue",
+      major_tick_line_color: "lightsteelblue",
+      minor_tick_line_color: "lightsteelblue",
+      major_label_text_color: "lightsteelblue",
+      axis_label_text_color: "lightsteelblue",
+    }
+    const props = [
+      ...Object.keys(reporterAttrs),
+      "axis_line_alpha",
+      "major_tick_line_alpha",
+      "minor_tick_line_alpha",
+      "major_label_text_alpha",
+      "axis_label_text_alpha",
+    ]
+
+    const baseline = resolveProps(null, "LinearAxis", reporterAttrs, props)
+    const broken = resolveProps(
+      window.Bokeh.Themes.caliber,
+      "LinearAxis",
+      reporterAttrs,
+      props
+    )
+    const fixed = resolveProps(
+      withUserIntent(window.Bokeh.Themes.caliber),
+      "LinearAxis",
+      reporterAttrs,
+      props
+    )
+
+    // The regression they reported...
+    expect(broken.major_tick_line_alpha).toBe(0.25)
+    expect(broken.minor_tick_line_alpha).toBe(0.25)
+    // ...and nothing else about their styling was affected.
+    expect(fixed).toEqual(baseline)
+  })
+
   test("applies on the real deserializer path, not just direct construction", () => {
     // `embed_item` reaches models through the deserializer, which constructs
     // with `{id}` only -- skipping the constructor's `initialize_props` -- and
