@@ -15,6 +15,7 @@
  */
 
 import { Streamlit, RenderData, Theme } from "streamlit-component-lib"
+import { withUserIntent } from "../shared/user-intent-theme"
 import { streamlitTheme } from "./streamlit-theme"
 
 declare global {
@@ -76,16 +77,21 @@ export const setChartThemeGenerator = () => {
       appTheme = renderedAppTheme
 
       const { use_theme } = window.Bokeh.require("core/properties")
+      // Bokeh's built-in themes ship in bokeh-api-*.min.js, so guard against
+      // them being absent rather than throwing on the `in` check.
+      const builtInThemes = window.Bokeh.Themes ?? {}
 
-      if (
-        currentTheme === "streamlit" ||
-        !(currentTheme in window.Bokeh.Themes)
-      ) {
-        use_theme(streamlitTheme(newAppTheme))
-        themeChanged = true
-      } else {
-        use_theme(window.Bokeh.Themes[currentTheme])
-      }
+      const theme =
+        currentTheme === "streamlit" || !(currentTheme in builtInThemes)
+          ? streamlitTheme(newAppTheme)
+          : builtInThemes[currentTheme]
+
+      // Wrapped so the theme can't suppress a visual whose colour the user set
+      // explicitly. See shared/user-intent-theme.ts.
+      use_theme(withUserIntent(theme))
+      // Previously left unset on the built-in-theme path, so switching between
+      // two built-in themes installed the theme but never re-embedded the chart.
+      themeChanged = true
     }
 
     return themeChanged

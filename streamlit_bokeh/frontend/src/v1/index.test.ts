@@ -104,6 +104,21 @@ describe("setChartThemeGenerator", () => {
 
     expect(result).toBe(true)
   })
+
+  test("should report a change when applying a built-in Bokeh theme", () => {
+    // Note "dark" above is not a Bokeh theme name, so those cases all take the
+    // Streamlit branch; these are the only tests covering a real built-in.
+    // This path previously left themeChanged unset, so switching between two
+    // built-in themes installed the theme but never re-embedded the chart.
+    const newAppTheme = {
+      textColor: "white",
+      backgroundColor: "black",
+      secondaryBackgroundColor: "gray",
+    } as Theme
+
+    expect(setChartTheme("caliber", newAppTheme)).toBe(true)
+    expect(setChartTheme("dark_minimal", newAppTheme)).toBe(true)
+  })
 })
 
 describe("getChartDimensions", () => {
