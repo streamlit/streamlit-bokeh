@@ -17,6 +17,7 @@ from __future__ import annotations
 import importlib.metadata
 import json
 import os
+import threading
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
@@ -62,6 +63,11 @@ _IS_USING_UPDATED_ISOLATE_STYLES_PARAM = Version(_STREAMLIT_VERSION) >= Version(
 # Registering on first call instead means the runtime always exists by the time
 # it happens, since the component can only render inside a script run.
 _component_func: Callable[..., Any] | None = None
+# Streamlit runs each session's script in its own thread, so first calls can
+# race. Registering twice is harmless -- Streamlit's registry overwrites by name
+# under its own lock -- but without this each racing thread would redo the glob
+# resolution and path validation for the same result.
+_component_func_lock = threading.Lock()
 
 
 def _create_component_func() -> Callable[..., Any]:
@@ -98,7 +104,10 @@ def _get_component_func() -> Callable[..., Any]:
     global _component_func
 
     if _component_func is None:
-        _component_func = _create_component_func()
+        with _component_func_lock:
+            # Re-checked inside the lock: another thread may have won the race.
+            if _component_func is None:
+                _component_func = _create_component_func()
 
     return _component_func
 

@@ -104,7 +104,6 @@ jobs:
           else
             pip install "streamlit==${{ matrix.streamlit }}"
           fi
-          python -m playwright install --with-deps
       - name: Verify the Streamlit version under test
         env:
           MATRIX_STREAMLIT: ${{ matrix.streamlit }}
@@ -127,10 +126,14 @@ jobs:
                   f"resolved to streamlit {installed}"
               )
           else:
-              assert installed == wanted, (
+              assert Version(installed) == Version(wanted), (
                   f"this leg should test streamlit {wanted}, but {installed} is installed"
               )
           EOF
+      - name: Install Playwright browsers
+        run: |
+          source venv/bin/activate
+          python -m playwright install --with-deps
       - name: Run playwright tests
         run: |
           source venv/bin/activate
