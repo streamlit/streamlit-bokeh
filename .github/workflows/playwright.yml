@@ -74,6 +74,11 @@ jobs:
           md5sum e2e_playwright/test-requirements.txt >> $GITHUB_WORKSPACE/python_cache_key.md5
           md5sum pyproject.toml >> $GITHUB_WORKSPACE/python_cache_key.md5
           date +%F >> $GITHUB_WORKSPACE/python_cache_key.md5
+          # Each matrix leg needs its own venv. Without this the legs share one
+          # cache entry, so whichever runs first decides the Streamlit version
+          # for both -- and the leg meant to test Custom Component v2 silently
+          # ran v1 instead.
+          echo "streamlit=${{ matrix.streamlit }}" >> $GITHUB_WORKSPACE/python_cache_key.md5
         shell: bash
       - name: Restore virtualenv from cache
         id: cache-virtualenv
@@ -93,11 +98,39 @@ jobs:
           pip install --upgrade pip
           pip install -r e2e_playwright/test-requirements.txt
           if [[ "${{ matrix.streamlit }}" == "latest" ]]; then
-            pip install streamlit
+            # -U matters: plain `pip install streamlit` is a no-op when any
+            # version is already present, so a restored venv would keep its own.
+            pip install -U streamlit
           else
             pip install "streamlit==${{ matrix.streamlit }}"
           fi
           python -m playwright install --with-deps
+      - name: Verify the Streamlit version under test
+        env:
+          MATRIX_STREAMLIT: ${{ matrix.streamlit }}
+        run: |
+          source venv/bin/activate
+          python - <<'EOF'
+          import os
+          import streamlit
+          from packaging.version import Version
+
+          wanted = os.environ["MATRIX_STREAMLIT"]
+          installed = streamlit.__version__
+          # streamlit-bokeh switches to Custom Component v2 at 1.51.0.
+          api = "v2" if Version(installed) >= Version("1.51.0") else "v1"
+          print(f"streamlit {installed} -> Custom Component {api}")
+
+          if wanted == "latest":
+              assert Version(installed) >= Version("1.51.0"), (
+                  f"this leg exists to test Custom Component v2, but 'latest' "
+                  f"resolved to streamlit {installed}"
+              )
+          else:
+              assert installed == wanted, (
+                  f"this leg should test streamlit {wanted}, but {installed} is installed"
+              )
+          EOF
       - name: Run playwright tests
         run: |
           source venv/bin/activate
