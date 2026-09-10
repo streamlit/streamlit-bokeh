@@ -21,4 +21,5 @@ CHART_TYPES = [
     "basic_bar",
     "vstack_line",
     "stack_bar",
+    "themed_user_styling",
 ]

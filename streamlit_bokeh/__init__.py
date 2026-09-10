@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 import importlib.metadata
 import json
 import os
@@ -22,6 +24,7 @@ import bokeh
 import streamlit as st
 from bokeh.embed import json_item
 from packaging.version import Version
+from streamlit.errors import StreamlitAPIException
 
 if TYPE_CHECKING:
     from bokeh.model import Model
@@ -82,11 +85,52 @@ else:
 __version__ = importlib.metadata.version("streamlit_bokeh")
 REQUIRED_BOKEH_VERSION = "3.10.0"
 
+# Bokeh's built-in themes that ship in the BokehJS bundles this component
+# loads. Deliberately not bokeh.themes.built_in_themes: "carbon" is in Bokeh's
+# Python package but absent from BokehJS, so it can never be applied here.
+_SUPPORTED_BOKEH_THEMES = (
+    "caliber",
+    "contrast",
+    "dark_minimal",
+    "light_minimal",
+    "night_sky",
+)
+
+# Themes bokeh.themes offers that BokehJS does not, tracked so the error can
+# explain the difference instead of reporting them as unknown names.
+_PYTHON_ONLY_BOKEH_THEMES = ("carbon",)
+
+
+def _validate_theme(theme: str | None) -> None:
+    """Reject theme names the frontend cannot apply.
+
+    Without this, an unsupported name silently falls back to the Streamlit
+    theme in the frontend, so the chart renders with a theme the caller never
+    asked for and nothing reports it.
+    """
+    if theme is None or theme == "streamlit" or theme in _SUPPORTED_BOKEH_THEMES:
+        return
+
+    supported = ", ".join(
+        f"`{name}`" for name in ("streamlit", *_SUPPORTED_BOKEH_THEMES)
+    )
+    detail = ""
+    if theme in _PYTHON_ONLY_BOKEH_THEMES:
+        detail = (
+            f" `{theme}` is one of Bokeh's Python themes, but it isn't included in "
+            "BokehJS, so it can't be applied in the browser."
+        )
+
+    raise StreamlitAPIException(
+        f"Invalid `theme` value: `{theme}`. Supported values: {supported}, or "
+        f"`None` to disable theming.{detail}"
+    )
+
 
 def streamlit_bokeh(
     figure: "Model",
     use_container_width: bool = True,
-    theme: str = "streamlit",
+    theme: str | None = "streamlit",
     key: str | None = None,
 ) -> None:
     """Create a new instance of "streamlit_bokeh".
@@ -102,6 +146,22 @@ def streamlit_bokeh(
         according to the plotting library, up to the width of the parent
         container. If ``use_container_width`` is ``True`` (default), Streamlit
         sets the width of the figure to match the width of the parent container.
+    theme : str or None
+        The theme to draw the figure with. This can be:
+
+        - ``"streamlit"`` (default): match Streamlit's current theme, including
+          light and dark mode.
+        - The name of a Bokeh theme: ``"caliber"``, ``"contrast"``,
+          ``"dark_minimal"``, ``"light_minimal"``, or ``"night_sky"``.
+        - ``None``: apply no theme, so the figure renders exactly as Bokeh
+          would draw it on its own.
+
+        Styling you set on the figure always takes precedence over the theme.
+        A theme only fills in what you left unspecified, so setting a *line*
+        colour makes that line render at Bokeh's default opacity rather than
+        the theme's. Set the matching ``*_line_alpha`` property to control
+        opacity yourself. Fill, text and hatch opacity is left to the theme,
+        since a theme's fill opacity can be keeping text above it readable.
     key: str or None
         An optional key that uniquely identifies this component. If this is
         None, and the component's arguments are changed, the component will
@@ -123,13 +183,15 @@ def streamlit_bokeh(
     """
 
     if bokeh.__version__ != REQUIRED_BOKEH_VERSION:
-        # TODO(ken): Update Error message
-        raise Exception(
-            f"Streamlit only supports Bokeh version {REQUIRED_BOKEH_VERSION}, "
-            f"but you have version {bokeh.__version__} installed. Please "
-            f"run `pip install --force-reinstall --no-deps bokeh=="
-            f"{REQUIRED_BOKEH_VERSION}` to install the correct version."
+        raise StreamlitAPIException(
+            f"`streamlit-bokeh` only supports Bokeh version "
+            f"{REQUIRED_BOKEH_VERSION}, but you have version "
+            f"{bokeh.__version__} installed. Please run `pip install "
+            f"--force-reinstall --no-deps bokeh=={REQUIRED_BOKEH_VERSION}` to "
+            f"install the correct version."
         )
+
+    _validate_theme(theme)
 
     if _IS_USING_CCV2:
         # Call through to our private component function.

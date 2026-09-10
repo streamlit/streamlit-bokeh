@@ -24,6 +24,10 @@ np.random.seed(0)
 
 chart = st.selectbox("Select a chart", CHART_TYPES)
 
+# Overridden by cases that need a specific Bokeh theme; "streamlit" is the
+# default the component already applies.
+theme = "streamlit"
+
 p = None
 if chart == "markers":
     from bokeh.core.enums import MarkerType
@@ -280,6 +284,43 @@ elif chart == "stack_bar":
     p.legend.location = "top_left"
     p.legend.orientation = "horizontal"
 
-streamlit_bokeh(p, use_container_width=False, key="chart_1")
+elif chart == "themed_user_styling":
+    # Regression coverage for streamlit/streamlit#11346. Under a built-in theme,
+    # styling an element's colour used to leave the theme supplying the sibling
+    # alpha, so the styling had no effect. dark_minimal sets the tick and axis
+    # line alphas to 0, which hid these colours entirely, and dims grid lines
+    # and the legend background to 0.25.
+    theme = "dark_minimal"
 
-streamlit_bokeh(p, use_container_width=True, key="chart_2")
+    p = figure(
+        title="User-styled axes under dark_minimal",
+        width=500,
+        height=300,
+        toolbar_location=None,
+    )
+    p.line(
+        [1, 2, 3, 4, 5],
+        [6, 7, 6, 4, 5],
+        line_color="orange",
+        line_width=2,
+        legend_label="Trend",
+    )
+
+    for axis in (p.xaxis, p.yaxis):
+        axis.axis_line_color = "lightsteelblue"
+        axis.major_tick_line_color = "lightsteelblue"
+        axis.minor_tick_line_color = "lightsteelblue"
+        axis.major_label_text_color = "lightsteelblue"
+
+    # A dimming case rather than a hiding one: the theme sets this alpha to 0.25
+    # where it sets the tick alphas to 0. Still a line group, so it renders fully
+    # opaque.
+    p.xgrid.grid_line_color = "crimson"
+    # The contrast with the line above: the theme dims this to 0.25 as well, but
+    # a fill is out of scope, so it stays dimmed. See INTENT_GROUPS in
+    # frontend/src/shared/theme-precedence.ts.
+    p.legend.background_fill_color = "navy"
+
+streamlit_bokeh(p, use_container_width=False, theme=theme, key="chart_1")
+
+streamlit_bokeh(p, use_container_width=True, theme=theme, key="chart_2")

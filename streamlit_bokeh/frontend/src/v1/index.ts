@@ -15,6 +15,7 @@
  */
 
 import { Streamlit, RenderData, Theme } from "streamlit-component-lib"
+import { withUserIntent } from "../shared/theme-precedence"
 import { streamlitTheme } from "./streamlit-theme"
 
 declare global {
@@ -58,33 +59,47 @@ export const getChartDataGenerator = () => {
 const getChartData = getChartDataGenerator()
 
 export const setChartThemeGenerator = () => {
-  let currentTheme: string | null = null
+  // The theme currently in effect for this instance. `undefined` means nothing
+  // has been installed yet, which has to stay distinct from `null`, the caller
+  // explicitly asking for no theme at all.
+  let currentTheme: string | null | undefined = undefined
   let appTheme: string | null = null
 
-  return (newTheme: string, newAppTheme: Theme) => {
-    let themeChanged = false
+  return (newTheme: string | null, newAppTheme: Theme) => {
     const renderedAppTheme = JSON.stringify(newAppTheme)
 
-    // The theme of the app changes if the theme provided by the component
-    // has changed or, we are using the streamlit theme and the theme of the
-    // app has changed (light mode to dark mode to custom theme)
-    if (
-      newTheme !== currentTheme ||
+    // Bokeh's built-in themes ship in bokeh-api-*.min.js, so guard against them
+    // being absent rather than throwing on the `in` check.
+    const builtInThemes = window.Bokeh.Themes ?? {}
+
+    // A name BokehJS lacks falls back to the Streamlit theme. Tracking what took
+    // effect rather than what was asked for keeps the change detection honest:
+    // caching an unavailable name would stop the Streamlit theme from following
+    // later light/dark switches.
+    const resolvedTheme =
+      newTheme === null || newTheme in builtInThemes ? newTheme : "streamlit"
+
+    // The app's own theme only matters while we are following it.
+    const themeChanged =
+      resolvedTheme !== currentTheme ||
       (currentTheme === "streamlit" && appTheme !== renderedAppTheme)
-    ) {
-      currentTheme = newTheme
+
+    if (themeChanged) {
+      currentTheme = resolvedTheme
       appTheme = renderedAppTheme
 
+      // v1 renders one chart per iframe with its own `window.Bokeh`, so there is
+      // no sibling instance to collide with here.
       const { use_theme } = window.Bokeh.require("core/properties")
 
-      if (
-        currentTheme === "streamlit" ||
-        !(currentTheme in window.Bokeh.Themes)
-      ) {
-        use_theme(streamlitTheme(newAppTheme))
-        themeChanged = true
+      if (resolvedTheme === null) {
+        use_theme(null)
+      } else if (resolvedTheme === "streamlit") {
+        // Wrapped so the theme cannot suppress a visual whose colour the user
+        // set explicitly. See shared/theme-precedence.ts.
+        use_theme(withUserIntent(streamlitTheme(newAppTheme)))
       } else {
-        use_theme(window.Bokeh.Themes[currentTheme])
+        use_theme(withUserIntent(builtInThemes[resolvedTheme]))
       }
     }
 
@@ -151,7 +166,7 @@ async function updateChart(data: any, useContainerWidth: boolean = false) {
 interface ComponentData {
   figure: string
   use_container_width: boolean
-  bokeh_theme: string
+  bokeh_theme: string | null
 }
 
 /**
