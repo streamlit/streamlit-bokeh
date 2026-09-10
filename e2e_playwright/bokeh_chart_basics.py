@@ -312,10 +312,12 @@ elif chart == "themed_user_styling":
         axis.minor_tick_line_color = "lightsteelblue"
         axis.major_label_text_color = "lightsteelblue"
 
-    # Dimmed to 0.25 by the theme rather than hidden.
+    # A dimming case rather than a hiding one: the theme sets this alpha to 0.25
+    # where it sets the tick alphas to 0. Still a line group, so it renders fully
+    # opaque.
     p.xgrid.grid_line_color = "crimson"
-    # Deliberately unaffected: the rule covers only line properties, so the
-    # theme keeps dimming legend backgrounds to 0.25. See INTENT_GROUPS in
+    # The contrast with the line above: the theme dims this to 0.25 as well, but
+    # a fill is out of scope, so it stays dimmed. See INTENT_GROUPS in
     # frontend/src/shared/theme-precedence.ts.
     p.legend.background_fill_color = "navy"
 

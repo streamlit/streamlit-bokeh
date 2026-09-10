@@ -227,6 +227,11 @@ describe("withUserIntent", () => {
   })
 
   test("never overrides an alpha the user set explicitly", () => {
+    // Note this holds with or without the wrapper: an explicit alpha makes
+    // `Property.initialize` take its explicit branch and never consult the theme
+    // at all. So this pins the Bokeh precedence the fix depends on, not the fix
+    // itself -- the caliber, reporter's-baseline and deserializer tests are the
+    // ones that discriminate.
     const caliber = withUserIntent(window.Bokeh.Themes.caliber)
 
     // Alpha alone: untouched, because there is no colour intent to honour.
