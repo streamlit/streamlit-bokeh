@@ -32,17 +32,21 @@ from streamlit_bokeh import streamlit_bokeh
 # Reruns the script; the figure is rebuilt unchanged.
 st.button("Rerun")
 
-x = [1, 2, 3, 4, 5]
-y = [6, 7, 2, 4, 5]
-
+# One large marker at the exact centre of fixed ranges, with the axes hidden so
+# the plot frame fills the canvas. A test can then hover the centre of the canvas
+# and be certain of hitting it -- no sweeping for a marker, and no way for the
+# test to quietly pass because it never found one.
 plot = figure(
     title="View teardown",
     width=400,
     height=300,
+    x_range=(0, 10),
+    y_range=(0, 10),
     toolbar_location=None,
     tools=[HoverTool(tooltips=[("x", "@x"), ("y", "@y")])],
 )
-# Large markers so a test can land the pointer on one without hunting.
-plot.scatter(x, y, size=40, fill_color="orange", line_color="navy")
+plot.axis.visible = False
+plot.grid.visible = False
+plot.scatter([5], [5], size=80, fill_color="orange", line_color="navy")
 
 streamlit_bokeh(plot, use_container_width=False, key="teardown_chart")

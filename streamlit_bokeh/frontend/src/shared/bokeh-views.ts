@@ -43,8 +43,9 @@
  * which cascades through `children_views()` down to the tooltip views. This
  * component simply discarded that return value.
  *
- * Call this before detaching the container, so views can unhook while their
- * elements are still connected.
+ * Call this before detaching the container. Nothing in Bokeh's `remove()` path
+ * branches on whether the element is still connected, so the order is not
+ * load-bearing -- it just keeps teardown and re-embed in an obvious sequence.
  *
  * See streamlit/streamlit#15549.
  */
@@ -59,13 +60,27 @@ export interface BokehViewManager {
  *
  * Duck-typed on purpose: `embed_item`'s return value is not part of Bokeh's
  * documented surface, so a future version could stop returning it. Losing
- * teardown would be a slow leak; throwing on every render would break the
- * chart outright.
+ * teardown should be a slow leak, not a broken chart.
+ *
+ * A failure inside `clear()` is reported and swallowed for the same reason.
+ * Letting it propagate is worse than it looks: the caller assigns the new
+ * manager from the `embed_item` that follows, so a throw here means the stored
+ * reference is never replaced and every later render retries teardown on the
+ * same broken manager -- one hiccup would break the chart for the rest of the
+ * session. Degrading to the old leaky behaviour is the lesser failure.
  */
 export function destroyViews(views: unknown): void {
   const manager = views as BokehViewManager | null | undefined
 
-  if (manager != null && typeof manager.clear === "function") {
+  if (manager == null || typeof manager.clear !== "function") {
+    return
+  }
+
+  try {
     manager.clear()
+  } catch (error) {
+    // eslint-disable-next-line no-console -- a silent teardown failure would
+    // present as an unexplained leak, so leave a trace.
+    console.error("streamlit-bokeh: failed to tear down previous views", error)
   }
 }

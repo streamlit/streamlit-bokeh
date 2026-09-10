@@ -63,22 +63,16 @@ def test_a_visible_tooltip_does_not_survive_a_rerun(app: Page, is_v2: bool) -> N
     canvas = app.locator("div.bk-Canvas")
     expect(canvas).to_be_visible()
 
-    # Hover a marker. The markers are large, so sweeping a few points across the
-    # canvas is enough to land on one without resolving data coordinates.
     box = canvas.bounding_box()
     assert box is not None
+    centre = (box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
     tooltip = app.locator("body > .bk-Tooltip")
 
-    for fraction_x in (0.2, 0.35, 0.5, 0.65, 0.8):
-        app.mouse.move(
-            box["x"] + box["width"] * fraction_x,
-            box["y"] + box["height"] * 0.5,
-        )
-        if tooltip.count() > 0:
-            break
-
-    if tooltip.count() == 0:
-        pytest.skip("could not land the pointer on a marker to raise a tooltip")
+    # The app puts one large marker at the centre of fixed ranges with the axes
+    # hidden, so this hits it. Asserted rather than skipped on: a test that
+    # quietly gives up when it cannot raise a tooltip is worse than no test.
+    app.mouse.move(*centre)
+    expect(tooltip).to_have_count(1)
 
     # Rerun by keyboard so the pointer never leaves the marker, which is the
     # reported situation: a tooltip up at the moment the chart is rebuilt.
@@ -88,6 +82,6 @@ def test_a_visible_tooltip_does_not_survive_a_rerun(app: Page, is_v2: bool) -> N
 
     # Move away first, so a legitimately new tooltip for the new chart cannot be
     # mistaken for the stale one.
-    app.mouse.move(box["x"] + box["width"] / 2, box["y"] - 60)
+    app.mouse.move(box["x"] + box["width"] / 2, box["y"] - 80)
 
     expect(tooltip).to_have_count(0)

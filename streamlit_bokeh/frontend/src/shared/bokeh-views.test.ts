@@ -39,17 +39,31 @@ describe("destroyViews", () => {
     expect(() => destroyViews(value)).not.toThrow()
   })
 
-  test("does not swallow an error raised by clear", () => {
-    // A failing teardown should surface rather than leave the caller believing
-    // the previous views are gone.
+  test("reports a failure inside clear without rethrowing", () => {
+    // Propagating would be worse than leaking: the caller only replaces its
+    // stored manager from the `embed_item` that follows, so a throw here leaves
+    // the old reference in place and every later render retries teardown on the
+    // same broken manager -- breaking the chart for the rest of the session
+    // rather than for one render.
     const boom = new Error("teardown failed")
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined)
 
-    expect(() =>
-      destroyViews({
-        clear: () => {
-          throw boom
-        },
-      })
-    ).toThrow(boom)
+    try {
+      expect(() =>
+        destroyViews({
+          clear: () => {
+            throw boom
+          },
+        })
+      ).not.toThrow()
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining("failed to tear down"),
+        boom
+      )
+    } finally {
+      consoleError.mockRestore()
+    }
   })
 })
