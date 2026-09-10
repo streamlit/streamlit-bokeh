@@ -15,6 +15,7 @@
  */
 
 import { Streamlit, RenderData, Theme } from "streamlit-component-lib"
+import { destroyViews } from "../shared/bokeh-views"
 import { withUserIntent } from "../shared/theme-precedence"
 import { streamlitTheme } from "./streamlit-theme"
 
@@ -108,6 +109,11 @@ export const setChartThemeGenerator = () => {
 }
 const setChartTheme = setChartThemeGenerator()
 
+// Views from the last embed, kept so they can be torn down before the next one.
+// v1 renders one chart per iframe, so module scope is instance scope here, the
+// same as getChartData and setChartTheme above.
+let currentViews: unknown = null
+
 export function getChartDimensions(
   plot: any,
   useContainerWidth: boolean
@@ -158,8 +164,13 @@ async function updateChart(data: any, useContainerWidth: boolean = false) {
   }
 
   if (chart !== null) {
+    // Before the container is detached, so the previous embed's views can unhook
+    // while their elements are still connected. See shared/bokeh-views.ts.
+    destroyViews(currentViews)
+
     removeAllChildNodes(chart)
-    await window.Bokeh.embed.embed_item(data, "stBokehChart")
+
+    currentViews = await window.Bokeh.embed.embed_item(data, "stBokehChart")
   }
 }
 
