@@ -24,6 +24,8 @@ only ever passes valid names, so the rejection path never executes.
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 
 import bokeh
@@ -113,3 +115,29 @@ def test_validation_is_wired_into_the_public_function() -> None:
 
     with pytest.raises(StreamlitAPIException, match="Invalid `theme` value"):
         streamlit_bokeh.streamlit_bokeh(plot, theme="carbon")
+
+
+def test_the_package_imports_without_a_streamlit_runtime() -> None:
+    """Importing must not require a running Streamlit runtime.
+
+    Registering a file-backed Custom Component v2 resolves its assets through
+    Streamlit's component manager, and with no runtime
+    `get_bidi_component_manager()` returns a fresh, empty manager on every call
+    -- so registration raises and the import fails. That is why registration is
+    deferred to first use.
+
+    This is checked in a subprocess because the test session has already
+    imported the module. Without the deferral, every test in this file fails as
+    a collection error instead, which reports the cause far less clearly.
+    """
+    result = subprocess.run(
+        [sys.executable, "-c", "import streamlit_bokeh"],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=_REPO_ROOT.parent,
+    )
+
+    assert (
+        result.returncode == 0
+    ), f"importing streamlit_bokeh without a Streamlit runtime failed:\n{result.stderr}"
