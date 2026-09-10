@@ -28,22 +28,8 @@ from pathlib import Path
 
 import bokeh
 import pytest
-import streamlit as st
+import streamlit_bokeh
 from streamlit.errors import StreamlitAPIException
-
-# Imported defensively. Registering the component runs at import time and can
-# fail against a Streamlit version this release predates -- the CI job that
-# installs the newest Streamlit hit exactly that. A collection error aborts the
-# entire run, so an unguarded import here would mask every other test, including
-# the ones that would show whether the app itself still works. Skip loudly
-# instead and let the rest of the suite report.
-try:
-    import streamlit_bokeh
-except Exception as exc:  # noqa: BLE001 - any import failure should skip, not abort
-    pytest.skip(
-        f"streamlit_bokeh failed to import under streamlit {st.__version__}: {exc}",
-        allow_module_level=True,
-    )
 
 _REPO_ROOT = Path(__file__).parent.parent
 
