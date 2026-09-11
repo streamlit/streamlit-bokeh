@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { destroyViews } from "../shared/bokeh-views"
 import { withUserIntent } from "../shared/theme-precedence"
 import { MinimalStreamlitTheme, streamlitTheme } from "./streamlit-theme"
 
@@ -145,8 +146,9 @@ async function updateChart(
   useContainerWidth: boolean = false,
   chart: HTMLDivElement,
   parentElement: HTMLElement,
-  key: string
-) {
+  key: string,
+  previousViews: unknown
+): Promise<unknown> {
   /**
    * When you create a bokeh chart in your python script, you can specify
    * the width: p = figure(title="simple line example", x_axis_label="x", y_axis_label="y", plot_width=200);
@@ -173,8 +175,13 @@ async function updateChart(
     }
   }
 
+  // Before the container is detached, so the previous embed's views can unhook
+  // while their elements are still connected. See shared/bokeh-views.ts.
+  destroyViews(previousViews)
+
   removeAllChildNodes(chart)
-  await window.Bokeh.embed.embed_item(data, key)
+
+  return window.Bokeh.embed.embed_item(data, key)
 }
 
 interface ComponentData {
@@ -208,6 +215,8 @@ type ComponentState = {
   initialized: boolean
   setChartTheme: ReturnType<typeof setChartThemeGenerator>
   getChartData: ReturnType<typeof getChartDataGenerator>
+  /** Views from this instance's last embed, kept so they can be torn down. */
+  views: unknown
 }
 
 const componentState = new WeakMap<HTMLElement | ShadowRoot, ComponentState>()
@@ -222,6 +231,7 @@ const getOrCreateInstanceState = (
       initialized: false,
       setChartTheme: setChartThemeGenerator(),
       getChartData: getChartDataGenerator(),
+      views: null,
     }
     componentState.set(host, state)
   }
@@ -281,11 +291,22 @@ const bokehComponent = async (component: ComponentArgs<{}, ComponentData>) => {
   // The only exception would be if the same info is sent down from the frontend
   // only. It shouldn't happen, but it's a safeguard.
   if (hasChanged || themeChanged) {
-    await updateChart(chartData, useContainerWidth, chart, container, key)
+    state.views = await updateChart(
+      chartData,
+      useContainerWidth,
+      chart,
+      container,
+      key,
+      state.views
+    )
   }
 
   return () => {
-    // Cleanup the instance state
+    // Unmounting detaches the container, which would orphan this instance's
+    // views and any DOM they attached elsewhere -- a visible tooltip would
+    // survive the component and outlive page navigation.
+    destroyViews(state.views)
+    state.views = null
     componentState.delete(parentElement)
   }
 }
