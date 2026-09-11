@@ -17,6 +17,7 @@ from __future__ import annotations
 import importlib.metadata
 import json
 import os
+import threading
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
@@ -50,36 +51,65 @@ _IS_USING_UPDATED_ISOLATE_STYLES_PARAM = Version(_STREAMLIT_VERSION) >= Version(
     "1.53.0"
 )
 
-# Version-gated component registration
-_component_func: Callable[..., Any]
+# Version-gated component registration, deferred to first use.
+#
+# Registering a file-backed Custom Component v2 resolves its assets through
+# Streamlit's component manager, and outside a running Streamlit runtime
+# `get_bidi_component_manager()` hands back a fresh, empty manager -- so the
+# asset root is never found and registration raises. Doing this at import time
+# therefore made `import streamlit_bokeh` fail anywhere there is no runtime: a
+# plain script, a notebook, or a test that only wants the module's helpers.
+#
+# Registering on first call instead means the runtime always exists by the time
+# it happens, since the component can only render inside a script run.
+_component_func: Callable[..., Any] | None = None
+# Streamlit runs each session's script in its own thread, so first calls can
+# race. Registering twice is harmless -- Streamlit's registry overwrites by name
+# under its own lock -- but without this each racing thread would redo the glob
+# resolution and path validation for the same result.
+_component_func_lock = threading.Lock()
 
-if _IS_USING_CCV2:
-    # Streamlit 1.53+ accepts isolate_styles in the `component(...)` call.
-    if _IS_USING_UPDATED_ISOLATE_STYLES_PARAM:
-        _component_func = st.components.v2.component(
+
+def _create_component_func() -> Callable[..., Any]:
+    """Registers the component with Streamlit and returns its callable."""
+    if _IS_USING_CCV2:
+        # Streamlit 1.53+ accepts isolate_styles in the `component(...)` call.
+        if _IS_USING_UPDATED_ISOLATE_STYLES_PARAM:
+            return st.components.v2.component(
+                name="streamlit-bokeh.streamlit_bokeh",
+                js="v2/index-*.mjs",
+                html="<div class='stBokehContainer'></div>",
+                isolate_styles=_ISOLATE_STYLES,
+            )
+
+        return st.components.v2.component(
             name="streamlit-bokeh.streamlit_bokeh",
             js="v2/index-*.mjs",
             html="<div class='stBokehContainer'></div>",
-            isolate_styles=_ISOLATE_STYLES,
         )
-    else:
-        _component_func = st.components.v2.component(
-            name="streamlit-bokeh.streamlit_bokeh",
-            js="v2/index-*.mjs",
-            html="<div class='stBokehContainer'></div>",
-        )
-else:
+
     if not _RELEASE:
-        _component_func = st.components.v1.declare_component(
+        return st.components.v1.declare_component(
             "streamlit_bokeh",
             url="http://localhost:3001",
         )
-    else:
-        parent_dir = os.path.dirname(os.path.abspath(__file__))
-        build_dir = os.path.join(parent_dir, "frontend/build")
-        _component_func = st.components.v1.declare_component(
-            "streamlit_bokeh", path=build_dir
-        )
+
+    parent_dir = os.path.dirname(os.path.abspath(__file__))
+    build_dir = os.path.join(parent_dir, "frontend/build")
+    return st.components.v1.declare_component("streamlit_bokeh", path=build_dir)
+
+
+def _get_component_func() -> Callable[..., Any]:
+    """Returns the component callable, registering it on first use."""
+    global _component_func
+
+    if _component_func is None:
+        with _component_func_lock:
+            # Re-checked inside the lock: another thread may have won the race.
+            if _component_func is None:
+                _component_func = _create_component_func()
+
+    return _component_func
 
 
 __version__ = importlib.metadata.version("streamlit_bokeh")
@@ -203,16 +233,16 @@ def streamlit_bokeh(
         # Streamlit 1.51-1.52 accepts isolate_styles on the returned component
         # function (it moved to `component(...)` in 1.53).
         if not _IS_USING_UPDATED_ISOLATE_STYLES_PARAM:
-            _component_func(key=key, data=data, isolate_styles=_ISOLATE_STYLES)
+            _get_component_func()(key=key, data=data, isolate_styles=_ISOLATE_STYLES)
         else:
-            _component_func(key=key, data=data)
+            _get_component_func()(key=key, data=data)
 
         return None
     else:
         # Call through to our private component function. Arguments we pass here
         # will be sent to the frontend, where they'll be available in an "args"
         # dictionary.
-        _component_func(
+        _get_component_func()(
             figure=json.dumps(json_item(figure)),
             use_container_width=use_container_width,
             bokeh_theme=theme,
