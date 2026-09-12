@@ -154,23 +154,6 @@ def update_test_requirements(
         f.write(test_requirements_contents)
 
 
-def update_package_json(old_version, new_version):
-    package_json_path = "streamlit_bokeh/frontend/package.json"
-    with open(package_json_path, "r") as f:
-        package_json_contents = f.read()
-
-    # Replace bokeh==old_version with bokeh==new_version
-    if old_version:
-        package_json_contents = re.sub(
-            rf"(\"version\": \"){old_version}(\")",
-            rf"\g<1>{new_version}\g<2>",
-            package_json_contents,
-        )
-
-    with open(package_json_path, "w") as f:
-        f.write(package_json_contents)
-
-
 def update_init_py(old_bokeh_version, new_bokeh_version):
     init_py_path = "streamlit_bokeh/__init__.py"
     with open(init_py_path, "r") as f:
@@ -336,9 +319,6 @@ if __name__ == "__main__":
     update_test_requirements(
         old_bokeh_version, new_bokeh_version, old_version, new_version
     )
-
-    # Update the component version in package.json
-    update_package_json(old_version, new_version)
 
     print("::set-output name=needs_update::true")
     print(f"::set-output name=old_version::{old_version}")
