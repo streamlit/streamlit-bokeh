@@ -97,7 +97,13 @@ jobs:
           # disagree: `inputs.dry_run` is a real boolean from the UI but a string
           # from `gh workflow run`, and comparing a string to a boolean in a
           # workflow `if:` coerces to NaN and is never equal.
-          dry_run = "true" if os.environ.get("DRY_RUN", "").lower() == "true" else "false"
+          # Anything unrecognised is an error rather than a default, so a
+          # scripted `-f dry_run=1` cannot quietly become a real run. Empty means
+          # the input was omitted, which takes the declared default of false.
+          raw = os.environ.get("DRY_RUN", "").strip().lower()
+          if raw not in ("", "true", "false"):
+              die(f"dry_run must be true or false, got '{raw}'")
+          dry_run = "true" if raw == "true" else "false"
 
           pathlib.Path(os.environ["GITHUB_OUTPUT"]).open("a").write(
               f"current={current}\nversion={version}\ndry_run={dry_run}\n"
