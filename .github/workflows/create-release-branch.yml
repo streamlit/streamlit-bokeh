@@ -1,0 +1,171 @@
+name: Create Release Branch
+
+# Prepares a component-only release: bumps the version everywhere it lives,
+# pushes a `release/<version>` branch and opens the PR. Merging that PR is what
+# actually releases, via release.yml.
+#
+# scripts/update_bokeh_version.py cannot do this. It derives the version from
+# Bokeh's (`<bokeh major>.<bokeh minor>.0`) and exits when Bokeh is unchanged, so
+# patch releases -- the component's own fixes against an unchanged Bokeh, as
+# v3.8.1 through v3.8.3 were -- had to be prepared by hand.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, e.g. 3.10.1. Defaults to the next patch."
+        required: false
+        type: string
+      dry_run:
+        description: "Show what would change without pushing a branch or opening a PR"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: create-release-branch
+  cancel-in-progress: false
+
+jobs:
+  create-release-branch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Work out the version to release
+        id: version
+        env:
+          REQUESTED: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          CURRENT="$(python -c "
+          import pathlib, tomllib
+          print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])
+          ")"
+
+          if [[ -n "$REQUESTED" ]]; then
+            VERSION="$REQUESTED"
+          else
+            # Default to the next patch. major.minor track Bokeh, so bumping
+            # either of those is the Bokeh-update automation's job, not this.
+            VERSION="$(python -c "
+          major, minor, patch = '$CURRENT'.split('.')
+          print(f'{major}.{minor}.{int(patch) + 1}')
+          ")"
+          fi
+
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$VERSION' is not a three-part version"
+            exit 1
+          fi
+          if [[ "$VERSION" == "$CURRENT" ]]; then
+            echo "::error::$VERSION is already the current version"
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "::error::tag v$VERSION already exists"
+            exit 1
+          fi
+          if git ls-remote --exit-code --heads origin "release/$VERSION" >/dev/null 2>&1; then
+            echo "::error::branch release/$VERSION already exists"
+            exit 1
+          fi
+
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Releasing $CURRENT -> $VERSION"
+
+      - name: Bump the version
+        env:
+          CURRENT: ${{ steps.version.outputs.current }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          python - <<'EOF'
+          import os
+          import pathlib
+          import re
+
+          current = os.environ["CURRENT"]
+          version = os.environ["VERSION"]
+
+          # Both pyprojects carry it: the outer one is what gets published, and
+          # Streamlit reads the inner one for the component manifest.
+          for path in ("pyproject.toml", "streamlit_bokeh/pyproject.toml"):
+              file = pathlib.Path(path)
+              text = file.read_text()
+              updated, count = re.subn(
+                  rf'^version = "{re.escape(current)}"$',
+                  f'version = "{version}"',
+                  text,
+                  flags=re.MULTILINE,
+              )
+              if count != 1:
+                  raise SystemExit(
+                      f"{path}: expected exactly one 'version = \"{current}\"', found {count}"
+                  )
+              file.write_text(updated)
+              print(f"  {path}: {current} -> {version}")
+          EOF
+
+          echo "--- diff ---"
+          git --no-pager diff
+
+      - name: Push the branch and open the PR
+        if: ${{ inputs.dry_run == false }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+          CURRENT: ${{ steps.version.outputs.current }}
+        run: |
+          set -euo pipefail
+          git config user.email "core+streamlitbot-github@streamlit.io"
+          git config user.name "Streamlit Bot"
+          git checkout -b "release/$VERSION"
+          git commit -am "Release $VERSION"
+          git push origin "release/$VERSION"
+
+          gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --head "release/$VERSION" \
+            --title "Release $VERSION" \
+            --body "$(printf '%s\n' \
+              "Releases \`$VERSION\` (was \`$CURRENT\`)." \
+              "" \
+              "Prepared by the Create Release Branch workflow. Merging this publishes to PyPI, tags \`v$VERSION\` and creates the GitHub Release with generated notes." \
+              "" \
+              "Check before merging:" \
+              "- the notes this will generate read sensibly for users" \
+              "- anything user-visible or breaking since \`v$CURRENT\` is called out")"
+
+      - name: Summary
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          CURRENT: ${{ steps.version.outputs.current }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          {
+            echo "### Release $VERSION"
+            echo ""
+            echo "- Previous version: \`$CURRENT\`"
+            echo "- Dry run: \`$DRY_RUN\`"
+            if [[ "$DRY_RUN" == "true" ]]; then
+              echo "- Nothing pushed. Re-run with dry run off to open the PR."
+            else
+              echo "- Branch \`release/$VERSION\` pushed and PR opened. Merging it releases."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
