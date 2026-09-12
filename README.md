@@ -207,6 +207,23 @@ For example, `3.6.x` will mirror a version of Bokeh that's `3.6.y`.
 
 ---
 
+## 🚢 Releasing
+
+Two steps, both from the GitHub UI:
+
+1. Run the **Create Release Branch** workflow (Actions → Create Release Branch → Run workflow). Leave `version` empty for the next patch, or enter one such as `3.11.0`. Tick `dry_run` to see what it would do without pushing anything.
+2. Review and merge the pull request it opens. Merging publishes to PyPI, tags `v<version>`, and creates the GitHub Release with notes generated from the pull requests merged since the last tag.
+
+Before merging, confirm CI ran on that PR, and that the generated notes read sensibly — they are built from PR titles, so a vague title becomes a vague release note.
+
+`major.minor` track Bokeh, so bumping either is the **Update Bokeh** workflow's job. Use Create Release Branch for the component's own fixes against an unchanged Bokeh.
+
+Both workflows refuse rather than guess. Creating a branch fails if the version is already released, is not greater than the current one, or is not a canonical `major.minor.patch` — `1.02.3` is rejected because PyPI would normalise it to `1.2.3`, leaving the tag and Release disagreeing with what shipped. Releasing fails if either `pyproject.toml` disagrees with the branch name, or if the tag already exists.
+
+If the release job fails after the PyPI upload has succeeded, re-running it is safe: the upload skips a version already published, and the Release step skips one that already exists.
+
+---
+
 ## 📝 Contributing
 
 Feel free to file issues in [our Streamlit Repository](https://github.com/streamlit/streamlit/issues/new/choose).
