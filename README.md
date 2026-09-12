@@ -78,10 +78,14 @@ streamlit run ./e2e_playwright/bokeh_chart_basics.py
 Python end-to-end tests (Playwright):
 
 ```bash
-# Build the package
+# Build the package (clear dist/ first, so the glob below matches one wheel)
+rm -rf dist
 uv build
-# Install the test dependencies
+# Install the test dependencies and the package you just built.
+# --reinstall matters on a rebuild: installing the same version again is
+# otherwise a no-op, so the tests would run against the previous frontend build.
 uv pip install -r e2e_playwright/test-requirements.txt
+uv pip install --reinstall dist/*.whl
 # Install browsers (first time only)
 python -m playwright install --with-deps
 # Run tests

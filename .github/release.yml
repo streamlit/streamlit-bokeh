@@ -1,0 +1,26 @@
+# Configuration for GitHub's auto-generated release notes, used by the
+# `gh release create --generate-notes` step in release.yml.
+#
+# Deliberately flat: no categories. Categorising requires labelling every PR,
+# and this repo's convention is that human PRs carry no labels -- only
+# dependabot's do. For a component that releases a handful of times a year,
+# tracking Bokeh, a single "What's Changed" list is easier to keep honest than
+# a scheme nobody remembers to apply.
+#
+# Dependabot is excluded by author rather than by label, so this needs no
+# labelling convention either. Its PRs update frontend build tooling (vite,
+# postcss, tar, ws), none of which ships in the wheel -- the published package
+# contains built assets -- so they are noise in user-facing notes. Anything a
+# user could be affected by comes through a human PR.
+#
+# Known artefact: merging the release PR is what triggers the release, so that
+# PR falls inside its own notes range and appears as a "Release <version>"
+# entry. Filtering it would mean excluding github-actions[bot], which also
+# opens the Bokeh update PRs -- and for a Bokeh release that PR is the only
+# meaningful entry, so the notes would come out empty. The redundant line is
+# the cheaper of the two.
+changelog:
+  exclude:
+    authors:
+      - dependabot
+      - dependabot[bot]
