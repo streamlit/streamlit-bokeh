@@ -80,8 +80,9 @@ Python end-to-end tests (Playwright):
 ```bash
 # Build the package
 uv build
-# Install the test dependencies
+# Install the test dependencies and the package you just built
 uv pip install -r e2e_playwright/test-requirements.txt
+uv pip install dist/*.whl
 # Install browsers (first time only)
 python -m playwright install --with-deps
 # Run tests

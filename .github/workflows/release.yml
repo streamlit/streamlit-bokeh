@@ -107,13 +107,6 @@ jobs:
           print(tomllib.loads(pathlib.Path('streamlit_bokeh/pyproject.toml').read_text())['project']['version'])
           ")"
 
-          # test-requirements.txt installs the built wheel by exact filename, so
-          # it carries the version too and breaks CI on the release branch if it
-          # is left behind.
-          WHEEL_LINE="$(grep -oE 'dist/streamlit_bokeh-[0-9]+\.[0-9]+\.[0-9]+-py3-none-any\.whl' e2e_playwright/test-requirements.txt || true)"
-          check "e2e_playwright/test-requirements.txt wheel pin" \
-            "$(echo "$WHEEL_LINE" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo missing)"
-
           if git ls-remote --exit-code --tags origin "refs/tags/v$BRANCH_VERSION" >/dev/null 2>&1; then
             echo "::error::tag v$BRANCH_VERSION already exists"
             fail=1

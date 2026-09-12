@@ -97,6 +97,10 @@ jobs:
           source venv/bin/activate
           pip install --upgrade pip
           pip install -r e2e_playwright/test-requirements.txt
+          # By glob rather than an exact filename pinned in test-requirements.txt:
+          # that pin carried the version, so every release had to bump it too and
+          # release-branch CI failed on install when it was forgotten.
+          pip install dist/*.whl
           if [[ "${{ matrix.streamlit }}" == "latest" ]]; then
             # -U matters: plain `pip install streamlit` is a no-op when any
             # version is already present, so a restored venv would keep its own.
