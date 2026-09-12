@@ -129,9 +129,7 @@ def update_pyproject_toml(new_version, old_bokeh_version, new_bokeh_version):
             f.write(contents)
 
 
-def update_test_requirements(
-    old_bokeh_version, new_bokeh_version, old_version, new_version
-):
+def update_test_requirements(old_bokeh_version, new_bokeh_version):
     test_requirements_path = "e2e_playwright/test-requirements.txt"
     with open(test_requirements_path, "r") as f:
         test_requirements_contents = f.read()
@@ -141,12 +139,6 @@ def update_test_requirements(
         test_requirements_contents = re.sub(
             rf"(bokeh\s*==\s*){old_bokeh_version}",
             rf"\g<1>{new_bokeh_version}",
-            test_requirements_contents,
-        )
-
-        test_requirements_contents = re.sub(
-            rf"(dist/streamlit_bokeh-){old_version}(-py3-none-any.whl)",
-            rf"\g<1>{new_version}\g<2>",
             test_requirements_contents,
         )
 
@@ -316,9 +308,7 @@ if __name__ == "__main__":
 
     # Update the bokeh dependency version in pyproject.toml and test-requirements.txt
     update_pyproject_toml(new_version, old_bokeh_version, new_bokeh_version)
-    update_test_requirements(
-        old_bokeh_version, new_bokeh_version, old_version, new_version
-    )
+    update_test_requirements(old_bokeh_version, new_bokeh_version)
 
     print("::set-output name=needs_update::true")
     print(f"::set-output name=old_version::{old_version}")

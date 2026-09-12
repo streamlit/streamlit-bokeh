@@ -78,7 +78,8 @@ streamlit run ./e2e_playwright/bokeh_chart_basics.py
 Python end-to-end tests (Playwright):
 
 ```bash
-# Build the package
+# Build the package (clear dist/ first, so the glob below matches one wheel)
+rm -rf dist
 uv build
 # Install the test dependencies and the package you just built
 uv pip install -r e2e_playwright/test-requirements.txt

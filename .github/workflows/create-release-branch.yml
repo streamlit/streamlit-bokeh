@@ -49,32 +49,64 @@ jobs:
         id: version
         env:
           REQUESTED: ${{ inputs.version }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
           set -euo pipefail
-          CURRENT="$(python -c "
-          import pathlib, tomllib
-          print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])
-          ")"
+          # Values reach Python through the environment, never by interpolation
+          # into a `python -c` body. pyproject's version is written by other
+          # automation, and splicing it into source would let a crafted value
+          # execute in a job holding contents: write.
+          python - <<'EOF'
+          import os
+          import pathlib
+          import re
+          import sys
+          import tomllib
 
-          if [[ -n "$REQUESTED" ]]; then
-            VERSION="$REQUESTED"
-          else
-            # Default to the next patch. major.minor track Bokeh, so bumping
-            # either of those is the Bokeh-update automation's job, not this.
-            VERSION="$(python -c "
-          major, minor, patch = '$CURRENT'.split('.')
-          print(f'{major}.{minor}.{int(patch) + 1}')
-          ")"
-          fi
+          current = tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"]
+          requested = os.environ.get("REQUESTED", "").strip()
 
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::'$VERSION' is not a three-part version"
-            exit 1
-          fi
-          if [[ "$VERSION" == "$CURRENT" ]]; then
-            echo "::error::$VERSION is already the current version"
-            exit 1
-          fi
+          if requested:
+              version = requested
+          else:
+              # Default to the next patch. major.minor track Bokeh, so bumping
+              # either is the Bokeh-update automation's job, not this one's.
+              major, minor, patch = current.split(".")
+              version = f"{major}.{minor}.{int(patch) + 1}"
+
+
+          def die(message):
+              print(f"::error::{message}")
+              raise SystemExit(1)
+
+
+          # Leading zeros are rejected because PyPI normalises "1.2.03" to 1.2.3,
+          # which would leave the branch, tag and Release all disagreeing with the
+          # version actually published -- and a string compare against pyproject
+          # would pass.
+          if not re.fullmatch(r"(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*)){2}", version):
+              die(f"'{version}' is not a canonical three-part version")
+          if version == current:
+              die(f"{version} is already the current version")
+          if tuple(map(int, version.split("."))) < tuple(map(int, current.split("."))):
+              # A typo like 3.9.9 against a current 3.10.0 would publish a version
+              # that can never be latest, and would skew the next release's notes.
+              die(f"{version} is lower than the current {current}")
+
+          # Normalised to a string here so the step gate and the summary cannot
+          # disagree: `inputs.dry_run` is a real boolean from the UI but a string
+          # from `gh workflow run`, and comparing a string to a boolean in a
+          # workflow `if:` coerces to NaN and is never equal.
+          dry_run = "true" if os.environ.get("DRY_RUN", "").lower() == "true" else "false"
+
+          pathlib.Path(os.environ["GITHUB_OUTPUT"]).open("a").write(
+              f"current={current}\nversion={version}\ndry_run={dry_run}\n"
+          )
+          pathlib.Path(os.environ["RUNNER_TEMP"], "release_version").write_text(version)
+          print(f"Releasing {current} -> {version} (dry run: {dry_run})")
+          EOF
+
+          VERSION="$(cat "$RUNNER_TEMP/release_version")"
           if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
             echo "::error::tag v$VERSION already exists"
             exit 1
@@ -83,10 +115,6 @@ jobs:
             echo "::error::branch release/$VERSION already exists"
             exit 1
           fi
-
-          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Releasing $CURRENT -> $VERSION"
 
       - name: Bump the version
         env:
@@ -125,7 +153,7 @@ jobs:
           git --no-pager diff
 
       - name: Push the branch and open the PR
-        if: ${{ inputs.dry_run == false }}
+        if: ${{ steps.version.outputs.dry_run == 'false' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.version.outputs.version }}
@@ -149,6 +177,7 @@ jobs:
               "Prepared by the Create Release Branch workflow. Merging this publishes to PyPI, tags \`v$VERSION\` and creates the GitHub Release with generated notes." \
               "" \
               "Check before merging:" \
+              "- CI has actually run on this PR; automation-opened PRs do not always trigger it" \
               "- the notes this will generate read sensibly for users" \
               "- anything user-visible or breaking since \`v$CURRENT\` is called out")"
 
@@ -156,7 +185,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
           CURRENT: ${{ steps.version.outputs.current }}
-          DRY_RUN: ${{ inputs.dry_run }}
+          DRY_RUN: ${{ steps.version.outputs.dry_run }}
         run: |
           {
             echo "### Release $VERSION"
