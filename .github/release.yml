@@ -12,6 +12,13 @@
 # postcss, tar, ws), none of which ships in the wheel -- the published package
 # contains built assets -- so they are noise in user-facing notes. Anything a
 # user could be affected by comes through a human PR.
+#
+# Known artefact: merging the release PR is what triggers the release, so that
+# PR falls inside its own notes range and appears as a "Release <version>"
+# entry. Filtering it would mean excluding github-actions[bot], which also
+# opens the Bokeh update PRs -- and for a Bokeh release that PR is the only
+# meaningful entry, so the notes would come out empty. The redundant line is
+# the cheaper of the two.
 changelog:
   exclude:
     authors:

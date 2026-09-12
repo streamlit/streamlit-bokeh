@@ -24,6 +24,22 @@ PYPROJECT_TOML_PATH = "pyproject.toml"
 PACKAGE_PYPROJECT_TOML_PATH = "streamlit_bokeh/pyproject.toml"
 
 
+def set_output(name, value):
+    """Publish a step output for update-bokeh.yml to read.
+
+    These drive the release branch name and the PR title, so they are not
+    cosmetic. `::set-output` was deprecated in 2022; writing to $GITHUB_OUTPUT
+    is the supported form. Outside Actions the variable is unset, so print
+    instead of failing -- the script is runnable locally.
+    """
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a") as f:
+            f.write(f"{name}={value}\n")
+    else:
+        print(f"output: {name}={value}")
+
+
 def get_latest_bokeh_version():
     url = "https://pypi.org/pypi/bokeh/json"
     response = requests.get(url)
@@ -278,13 +294,13 @@ if __name__ == "__main__":
 
     if new_bokeh_version == old_bokeh_version:
         print("No new version available")
-        print("::set-output name=needs_update::false")
+        set_output("needs_update", "false")
         exit(0)
 
     # check if there's a release branch for new_version
     if check_remote_branch_exists("origin", new_version):
         print(f"Release branch for {new_version} already exists")
-        print("::set-output name=needs_update::false")
+        set_output("needs_update", "false")
         exit(0)
 
     print("New version available!")
@@ -310,7 +326,7 @@ if __name__ == "__main__":
     update_pyproject_toml(new_version, old_bokeh_version, new_bokeh_version)
     update_test_requirements(old_bokeh_version, new_bokeh_version)
 
-    print("::set-output name=needs_update::true")
-    print(f"::set-output name=old_version::{old_version}")
-    print(f"::set-output name=new_version::{new_version}")
-    print(f"::set-output name=new_bokeh_version::{new_bokeh_version}")
+    set_output("needs_update", "true")
+    set_output("old_version", old_version)
+    set_output("new_version", new_version)
+    set_output("new_bokeh_version", new_bokeh_version)
