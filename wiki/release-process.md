@@ -24,15 +24,17 @@ this guide and a workflow disagree, follow the workflow and update this page.
 
 ## Before you start
 
-- Decide which kind of release this is. `major.minor` mirror Bokeh, so bumping
-  either is [Update Bokeh](#a-new-bokeh-version)'s job. The patch number is the
-  component's own, for fixes against an unchanged Bokeh.
+- Decide which kind of release this is. Anything that changes the vendored Bokeh
+  is [Update Bokeh](#a-new-bokeh-version)'s job. Use Create Release Branch for
+  the component's own fixes against an unchanged Bokeh.
 - Choose the full version without a `v` prefix, such as `3.10.1`.
 - Keep one release in flight at a time. The publish workflow serialises on a
   `release` concurrency group, but two open `release/*` PRs are still confusing.
-- The publish job runs in the protected `release` environment, which requires a
-  reviewer. Whoever merges the PR should make sure someone is available to
-  approve the deployment, or the release waits.
+- The publish job runs in the protected `release` environment, which currently
+  requires a reviewer. That is repository configuration (Settings → Environments
+  → `release`), not something the workflow files pin, so confirm it still holds
+  if the approval step does not appear. Whoever merges the PR should make sure
+  someone is available to approve, or the release waits.
 
 Branches and tags derive from the same version, and the tag carries a `v`:
 
@@ -110,13 +112,22 @@ ran against, even if another PR merged while they were running.
 
 [Update Bokeh](https://github.com/streamlit/streamlit-bokeh/actions/workflows/update-bokeh.yml)
 runs weekly, compares the vendored BokehJS against the latest release on PyPI,
-and when they differ opens a `release/<bokeh major>.<bokeh minor>.0` PR that
-vendors the new assets and sets the version. From there it is the same process:
-review and merge the PR, then approve the deployment.
+and when they differ opens a `release/<version>` PR that vendors the new assets
+and sets the version. From there it is the same process: review and merge the
+PR, then approve the deployment.
 
-Because the patch number resets to `0`, a Bokeh bump cannot also carry a
-component patch. Ship the Bokeh release first, then a patch release on top of it
-if one is needed.
+Which version it picks depends on what changed upstream
+([`update_bokeh_version.py`](../scripts/update_bokeh_version.py)):
+
+| Upstream change | New component version |
+|-----------------|-----------------------|
+| Bokeh major or minor, `3.10.x` to `3.11.0` | `3.11.0` — the patch resets |
+| Bokeh patch only, `3.10.0` to `3.10.1` | the component's patch incremented, so `3.10.4` becomes `3.10.5` |
+
+So `major.minor` always mirror Bokeh, but the patch does not: a Bokeh patch
+release consumes one of the component's own patch numbers, and afterwards the
+two patch numbers are unrelated. This also means Update Bokeh fires for upstream
+patch releases, not only for major and minor ones.
 
 ## Release notes
 
@@ -144,6 +155,12 @@ the published package.
   attempting to republish.
 - **The published wheel is wrong:** PyPI versions are immutable and cannot be
   replaced. Yank the release on PyPI if it is harmful, and ship a new patch.
+- **The version is already on PyPI but has no tag:** this is the one case where
+  the re-run behaviour above is a hazard rather than a help. The upload skips the
+  existing file without comparing its contents, so the tag and Release would end
+  up describing a commit whose wheel never reached PyPI. Nothing in the pipeline
+  produces this state — it takes a publish from outside it — but if you find
+  yourself in it, release a new patch version instead of reusing the number.
 - **`merge_commit_sha is empty`:** GitHub had not populated the merge commit when
   the workflow started. Re-run the job; it refuses rather than fall back to
   `main`, which would publish a commit the tests never saw.
