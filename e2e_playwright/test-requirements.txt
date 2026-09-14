@@ -20,4 +20,3 @@ pytest-playwright>=0.3.3
 pytest-xdist
 scipy
 testfixtures
-dist/streamlit_bokeh-3.10.0-py3-none-any.whl

@@ -7,6 +7,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   if-release-branch:
     runs-on: ubuntu-latest
@@ -19,11 +23,16 @@ jobs:
           PR_MERGED: ${{ github.event.pull_request.merged }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
+          # Leading zeros are rejected here too, not just in
+          # create-release-branch.yml: PyPI normalises "1.02.3" to 1.2.3, and the
+          # checks below only compare this branch name to pyproject as strings, so
+          # a hand-pushed branch would otherwise tag and release a version that
+          # disagrees with the one published.
           if [[ "$PR_MERGED" == "true" &&
-                "$HEAD_REF" =~ ^release/[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::set-output name=is_release::true"
+                "$HEAD_REF" =~ ^release/(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*)){2}$ ]]; then
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::set-output name=is_release::false"
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
           fi
 
   run-ts-tests:
@@ -61,10 +70,30 @@ jobs:
       contents: write
       id-token: write
     steps:
+      - name: Resolve the commit to release
+        env:
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          set -euo pipefail
+          # Refuse rather than fall back to `main`. Falling back would silently
+          # reintroduce the gap the explicit ref exists to close, and an
+          # unverified ref is worse than a failed release: a re-run once the
+          # payload is complete costs minutes, an untested publish is permanent.
+          if [[ -z "$MERGE_SHA" ]]; then
+            echo "::error::merge_commit_sha is empty; refusing to release from an unverified ref"
+            exit 1
+          fi
+          echo "Releasing $MERGE_SHA"
+
       - name: Checkout Streamlit code
         uses: actions/checkout@v4
         with:
-          ref: main
+          # The merge commit, not `main`. The test jobs above run against the
+          # release branch and can take several minutes, and any other PR merged
+          # in that window would otherwise be built, published and tagged here
+          # without having gone through them.
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-tags: true
           # Save the access token to the local git config, so
           # later git commands can work.
           persist-credentials: true
@@ -75,6 +104,58 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Verify the version matches the release branch
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          BRANCH_VERSION="${HEAD_REF#release/}"
+          echo "Release branch says: $BRANCH_VERSION"
+
+          # The tag is derived from the branch name but the wheel is built from
+          # main, so a forgotten version bump would publish the previous
+          # version's wheel under a new tag. PyPI rejects the duplicate upload,
+          # leaving a tag pointing at a release that does not exist.
+          fail=0
+          check() {
+            if [[ "$2" != "$BRANCH_VERSION" ]]; then
+              echo "::error::$1 declares $2, expected $BRANCH_VERSION"
+              fail=1
+            else
+              echo "  ok: $1 -> $2"
+            fi
+          }
+
+          check pyproject.toml "$(python -c "
+          import pathlib, tomllib
+          print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])
+          ")"
+          check streamlit_bokeh/pyproject.toml "$(python -c "
+          import pathlib, tomllib
+          print(tomllib.loads(pathlib.Path('streamlit_bokeh/pyproject.toml').read_text())['project']['version'])
+          ")"
+
+          if git ls-remote --exit-code --tags origin "refs/tags/v$BRANCH_VERSION" >/dev/null 2>&1; then
+            echo "::error::tag v$BRANCH_VERSION already exists"
+            fail=1
+          fi
+
+          [[ "$fail" == 0 ]] || exit 1
+
+          # Notes are generated against this. GitHub's own default baseline is
+          # already the previous tag -- verified by generating notes for this repo
+          # with and without it, which produced identical output even though the
+          # newest *Release* is v3.7.1 and seven later tags have none. Passing it
+          # explicitly pins behaviour that is otherwise undocumented inference.
+          # Empty is fine and means "let GitHub decide"; `|| true` keeps a repo
+          # with no matching tags from failing the pipeline under `pipefail`.
+          PREVIOUS_TAG="$(git ls-remote --tags --refs origin 'refs/tags/v*' \
+            | awk -F/ '{print $NF}' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V | tail -1 || true)"
+          echo "Previous tag: ${PREVIOUS_TAG:-<none>}"
+          echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> "$GITHUB_ENV"
 
       - name: Enable and Prepare Yarn
         run: |
@@ -127,13 +208,21 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
+          # Publishing happens before the tag push and Release creation, and a
+          # re-run restarts the whole job -- so without this, a transient failure
+          # in either of those steps is unrecoverable through the UI: the re-run
+          # dies here on the duplicate upload and never reaches them. PyPI
+          # versions are immutable, so skipping an already-published file is the
+          # only way that retry can proceed. Releasing a version twice is caught
+          # earlier by the tag-exists check, not by this step.
+          skip-existing: true
 
       - name: Push Tags
         env:
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           NEW_VERSION=$(echo "$HEAD_REF" | sed 's/release\///')
-          if [[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [[ "$NEW_VERSION" =~ ^(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*)){2}$ ]]; then
             echo "New version: $NEW_VERSION"
             git config --global user.email "core+streamlitbot-github@streamlit.io"
             git config --global user.name "Streamlit Bot"
@@ -143,6 +232,31 @@ jobs:
             echo "Error: Invalid version detected!"
             exit 1
           fi
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          NEW_VERSION="${HEAD_REF#release/}"
+          # Without this the workflow only pushed a tag, so the repository's
+          # Releases page still advertised v3.7.1 from April 2025 while 3.10.0
+          # was on PyPI. Notes are generated by GitHub from merged PRs, shaped
+          # by .github/release.yml.
+          # Skipped if it already exists so a re-run after a later-step failure
+          # does not fail here.
+          if gh release view "v${NEW_VERSION}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v${NEW_VERSION} already exists"
+            exit 0
+          fi
+
+          gh release create "v${NEW_VERSION}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "v${NEW_VERSION}" \
+            --generate-notes \
+            ${PREVIOUS_TAG:+--notes-start-tag "$PREVIOUS_TAG"} \
+            --verify-tag
 
       - name: Successful Release Slack Message
         if: success()

@@ -24,6 +24,22 @@ PYPROJECT_TOML_PATH = "pyproject.toml"
 PACKAGE_PYPROJECT_TOML_PATH = "streamlit_bokeh/pyproject.toml"
 
 
+def set_output(name, value):
+    """Publish a step output for update-bokeh.yml to read.
+
+    These drive the release branch name and the PR title, so they are not
+    cosmetic. `::set-output` was deprecated in 2022; writing to $GITHUB_OUTPUT
+    is the supported form. Outside Actions the variable is unset, so print
+    instead of failing -- the script is runnable locally.
+    """
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a") as f:
+            f.write(f"{name}={value}\n")
+    else:
+        print(f"output: {name}={value}")
+
+
 def get_latest_bokeh_version():
     url = "https://pypi.org/pypi/bokeh/json"
     response = requests.get(url)
@@ -129,9 +145,7 @@ def update_pyproject_toml(new_version, old_bokeh_version, new_bokeh_version):
             f.write(contents)
 
 
-def update_test_requirements(
-    old_bokeh_version, new_bokeh_version, old_version, new_version
-):
+def update_test_requirements(old_bokeh_version, new_bokeh_version):
     test_requirements_path = "e2e_playwright/test-requirements.txt"
     with open(test_requirements_path, "r") as f:
         test_requirements_contents = f.read()
@@ -144,31 +158,8 @@ def update_test_requirements(
             test_requirements_contents,
         )
 
-        test_requirements_contents = re.sub(
-            rf"(dist/streamlit_bokeh-){old_version}(-py3-none-any.whl)",
-            rf"\g<1>{new_version}\g<2>",
-            test_requirements_contents,
-        )
-
     with open(test_requirements_path, "w") as f:
         f.write(test_requirements_contents)
-
-
-def update_package_json(old_version, new_version):
-    package_json_path = "streamlit_bokeh/frontend/package.json"
-    with open(package_json_path, "r") as f:
-        package_json_contents = f.read()
-
-    # Replace bokeh==old_version with bokeh==new_version
-    if old_version:
-        package_json_contents = re.sub(
-            rf"(\"version\": \"){old_version}(\")",
-            rf"\g<1>{new_version}\g<2>",
-            package_json_contents,
-        )
-
-    with open(package_json_path, "w") as f:
-        f.write(package_json_contents)
 
 
 def update_init_py(old_bokeh_version, new_bokeh_version):
@@ -303,13 +294,13 @@ if __name__ == "__main__":
 
     if new_bokeh_version == old_bokeh_version:
         print("No new version available")
-        print("::set-output name=needs_update::false")
+        set_output("needs_update", "false")
         exit(0)
 
     # check if there's a release branch for new_version
     if check_remote_branch_exists("origin", new_version):
         print(f"Release branch for {new_version} already exists")
-        print("::set-output name=needs_update::false")
+        set_output("needs_update", "false")
         exit(0)
 
     print("New version available!")
@@ -333,14 +324,9 @@ if __name__ == "__main__":
 
     # Update the bokeh dependency version in pyproject.toml and test-requirements.txt
     update_pyproject_toml(new_version, old_bokeh_version, new_bokeh_version)
-    update_test_requirements(
-        old_bokeh_version, new_bokeh_version, old_version, new_version
-    )
+    update_test_requirements(old_bokeh_version, new_bokeh_version)
 
-    # Update the component version in package.json
-    update_package_json(old_version, new_version)
-
-    print("::set-output name=needs_update::true")
-    print(f"::set-output name=old_version::{old_version}")
-    print(f"::set-output name=new_version::{new_version}")
-    print(f"::set-output name=new_bokeh_version::{new_bokeh_version}")
+    set_output("needs_update", "true")
+    set_output("old_version", old_version)
+    set_output("new_version", new_version)
+    set_output("new_bokeh_version", new_bokeh_version)
