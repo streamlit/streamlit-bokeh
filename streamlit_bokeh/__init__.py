@@ -113,7 +113,7 @@ def _get_component_func() -> Callable[..., Any]:
 
 
 __version__ = importlib.metadata.version("streamlit_bokeh")
-REQUIRED_BOKEH_VERSION = "3.10.0"
+REQUIRED_BOKEH_VERSION = "3.10.1"
 
 # Bokeh's built-in themes that ship in the BokehJS bundles this component
 # loads. Deliberately not bokeh.themes.built_in_themes: "carbon" is in Bokeh's
